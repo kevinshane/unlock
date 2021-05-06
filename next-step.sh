@@ -6,13 +6,13 @@ echo "[Unit]
 Description=mdevctl ksh vgpu
 After=default.target
 [Service]
-ExecStart=/root/v-unlock/1q.sh
+ExecStart=/root/unlock/1q.sh
 [Install]
 WantedBy=default.target" > /etc/systemd/system/mdev-startup.service
 systemctl daemon-reload
 systemctl enable mdev-startup.service
-sh /root/v-unlock/kill.sh
-sh /root/v-unlock/1q.sh
+sh /root/unlock/kill.sh
+sh /root/unlock/1q.sh
 echo "======================================================================="
 echo "vGPU is now have 1G vram!"
 echo "======================================================================="
@@ -23,13 +23,13 @@ echo "[Unit]
 Description=mdevctl ksh vgpu
 After=default.target
 [Service]
-ExecStart=/root/v-unlock/2q.sh
+ExecStart=/root/unlock/2q.sh
 [Install]
 WantedBy=default.target" > /etc/systemd/system/mdev-startup.service
 systemctl daemon-reload
 systemctl enable mdev-startup.service
-sh /root/v-unlock/kill.sh
-sh /root/v-unlock/2q.sh
+sh /root/unlock/kill.sh
+sh /root/unlock/2q.sh
 echo "======================================================================="
 echo "vGPU is now have 2G vram!"
 echo "======================================================================="
@@ -40,13 +40,13 @@ echo "[Unit]
 Description=mdevctl ksh vgpu
 After=default.target
 [Service]
-ExecStart=/root/v-unlock/4q.sh
+ExecStart=/root/unlock/4q.sh
 [Install]
 WantedBy=default.target" > /etc/systemd/system/mdev-startup.service
 systemctl daemon-reload
 systemctl enable mdev-startup.service
-sh /root/v-unlock/kill.sh
-sh /root/v-unlock/4q.sh
+sh /root/unlock/kill.sh
+sh /root/unlock/4q.sh
 echo "======================================================================="
 echo "vGPU is now have 4G vram!"
 echo "======================================================================="
