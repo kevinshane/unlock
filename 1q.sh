@@ -12,7 +12,7 @@ III="94df9f85-44b9-4f48-a81b-8a19f0d19191"
 JJJ="108d9d06-eb33-4fe0-8115-cc2d5f6f8589"
 KKK="11049ddb-b7ab-4a0c-9111-ab4529b39489"
 
-PCI="$(lspci | grep -i nvidia | awk '{print $1}')"
+PCI="$(lspci | grep -i nvidia | grep -i vga | awk '{print $1}')"
 DEV="$(/root/vgpu_unlock/scripts/vgpu-name.sh -p ALL | grep -e -1Q | awk '{print $3}')"
 
 mdevctl start -u $AAA -p 0000:$PCI --type $DEV
