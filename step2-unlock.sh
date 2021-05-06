@@ -70,6 +70,9 @@ export JJJ=108d9d06-eb33-4fe0-8115-cc2d5f6f8589
 export KKK=11049ddb-b7ab-4a0c-9111-ab4529b39489
 " >> /etc/environment
 
+# adding vgpu command
+echo "alias vgpu='/root/vgpu_unlock/scripts/vgpu-name.sh -p ALL'" >> ~/.bashrc
+
 echo "======================================================================="
 echo "Done! Please reboot!"
 echo "======================================================================="
