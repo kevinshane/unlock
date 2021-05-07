@@ -38,11 +38,6 @@ alias lla='ls -la'
 alias lt='ls --tree'
 alias cat='bat'" >> ~/.bashrc
 
-# # install zsh and ohmyzsh
-# apt install zsh
-# sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-# # sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"
-
 echo "======================================================================="
 echo "step 3 --> adding Modules ..."
 echo "======================================================================="
