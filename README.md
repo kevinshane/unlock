@@ -1,14 +1,13 @@
+- Easy to run. For new PVE install only.
 - 无脑一键解锁
     ```sh
-    cd /root/
-    wget https://raw.githubusercontent.com/kevinshane/unlock/master/begin.sh
-    chmod +x /root/begin.sh
-    /root/begin.sh
+    cd /root/ && wget https://raw.githubusercontent.com/kevinshane/unlock/master/begin.sh && hmod +x /root/begin.sh && /root/begin.sh
     ```
 
 ---
 
-- UUID列表，共11个，可适用于11台VM，不够可以自行添加
+- Creates 11 uuids during installation. Please do not change these due to script automations. 
+- UUID列表共11个，可适用于11台VM同时运行，不够可以自行添加！请勿更改这11个uuid，因为脚本依赖这11个进行开机自动化处理！
   ```sh
   AAA=1728f397-99e5-47a6-9e70-ac00d8031596
   BBB=2d5d39f8-80f3-4925-b790-8f7a405b8cb5

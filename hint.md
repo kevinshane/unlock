@@ -14,3 +14,6 @@
   - P8 - Basic HD video playback
   - P10 - DVD playback
   - P12 - Minimum idle power consumption
+
+# display total gpu memory capacity
+`nvidia-smi --query-gpu=memory.total --format=csv | awk '/^memory/ {getline; print}' | awk '{print $1}'`
