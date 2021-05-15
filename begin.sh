@@ -94,7 +94,7 @@ startUpdate(){
     ----------------------------------------------------------------
     Script may possible damaging your harware, use at your own risk.
     You are responible to what you have done in the next step.
-    Please do not use for commercial or any production envirment.
+    Please do not use for commercial or any production environment.
     ----------------------------------------------------------------
 
     PVE Automation:
@@ -127,6 +127,7 @@ do
   else 
     echo "$(tput setaf 1)× You don't have $app install! 未安装$app$(tput sgr 0)"
     apt install -y $app
+    echo "$(tput setaf 2)√ Done $app installed! 已安装$app$(tput sgr 0)"
   fi
 done
 
@@ -198,17 +199,17 @@ fi
 # adding 11 uuid to env
 if [ `grep "AAA" /etc/environment|wc -l` = 0 ];then
     cat <<EOF >> /etc/environment
-export $AAA
-export $BBB
-export $CCC
-export $DDD
-export $EEE
-export $FFF
-export $GGG
-export $HHH
-export $III
-export $JJJ
-export $KKK
+export AAA=1728f397-99e5-47a6-9e70-ac00d8031596
+export BBB=2d5d39f8-80f3-4925-b790-8f7a405b8cb5
+export CCC=3b305d4e-88f7-4bea-b2e5-dd436142dc60
+export DDD=44da7489-1b80-4e12-93e7-ae2b2b49876f
+export EEE=5e694858-12ed-4c55-b57a-c4e889bee0b2
+export FFF=6b749fe2-5835-46b5-aff2-19c79b60ddcc
+export GGG=7fcb38e2-41c2-4807-80f1-3b79d501f1b5
+export HHH=8f601d2d-431a-421c-9f51-49280cfddd8f
+export III=94df9f85-44b9-4f48-a81b-8a19f0d19191
+export JJJ=108d9d06-eb33-4fe0-8115-cc2d5f6f8589
+export KKK=11049ddb-b7ab-4a0c-9111-ab4529b39489
 EOF
 else echo "$(tput setaf 2)√ Done setup 11 UUID env! 已添加总共11个UUID环境变量$(tput sgr 0)"
 fi
@@ -226,9 +227,9 @@ else echo "$(tput setaf 2)√ Done unlock command! 已设置unlock命令$(tput s
 fi
 
 echo "======================================================================="
-echo "Done! Please reboot!"
+echo "$(tput setaf 2)Done! Please reboot!"
 echo "after reboot, you can run <vgpu> to list all support vgpu"
-echo "$(tput setaf 2)搞定！请重启PVE！重启后可以运行vgpu查看所有支持的型号$(tput sgr 0)"
+echo "搞定！请重启PVE！重启后可以运行vgpu查看所有支持的型号$(tput sgr 0)"
 echo "                                                                 by ksh"
 echo "======================================================================="
 tput sgr 0
@@ -268,7 +269,7 @@ startUnlock(){
     ----------------------------------------------------------------
     Script may possible damaging your harware, use at your own risk.
     You are responible to what you have done in the next step.
-    Please do not use for commercial or any production envirment.
+    Please do not use for commercial or any production environment.
     ----------------------------------------------------------------
 
     1. Motherboard needs to support vt-x / vt-d
@@ -545,7 +546,7 @@ if (whiptail --title "Agreement" --yes-button "I Agree" --no-button "Go Back"  -
 ----------------------------------------------------------------------
 Script may possible damaging your harware, use at your own risk.
 You are responible to what you have done in the next step.
-Please do not use for commercial or any production envirment.
+Please do not use for commercial or any production environment.
 ----------------------------------------------------------------------
 
 When PVE boots up, script remembers the last choice.
