@@ -1,7 +1,7 @@
 - Easy to run. For new PVE install only.
 - 无脑一键解锁
     ```sh
-    cd /root/ && wget https://raw.githubusercontent.com/kevinshane/unlock/master/begin.sh && hmod +x /root/begin.sh && /root/begin.sh
+    cd /root/ && wget https://raw.githubusercontent.com/kevinshane/unlock/master/begin.sh && chmod +x /root/begin.sh && /root/begin.sh
     ```
 
 ---
