@@ -2,9 +2,26 @@
 ###############--vgpu unlock tools--###############
 #  Author : ksh
 #  Mail: kevinshane@vip.qq.com
-#  Version: v0.0.2
+#  Version: v0.0.3
 #  Github: https://github.com/kevinshane/unlock
 ###################################################
+
+# For errors look in dmesg for:
+  # - BAR3 mapped
+  # - Magic Found
+  # - Key Found
+  # - Failed to find ...
+  # - Invalid sign or blocks pointer
+  # - Generate signature
+  # - Signature does not match
+  # - Decrypted first block
+
+# nvidia-smi Perf
+  # - P0/P1 - Maximum 3D performance
+  # - P2/P3 - Balanced 3D performance-power
+  # - P8 - Basic HD video playback
+  # - P10 - DVD playback
+  # - P12 - Minimum idle power consumption
 
 # define 11 uuid, do not modify these uuids
 AAA="1728f397-99e5-47a6-9e70-ac00d8031596"
@@ -268,8 +285,9 @@ startUnlock(){
     if (whiptail --title "Agreement" --yes-button "I Agree" --no-button "Go Back"  --yesno "
     ----------------------------------------------------------------
     Script may possible damaging your harware, use at your own risk.
-    You are responible to what you have done in the next step.
+    I'll not take responible to what you have done in the next step.
     Please do not use for commercial or any production environment.
+    Credits to vgpu_unlock github that make this happen.
     ----------------------------------------------------------------
 
     1. Motherboard needs to support vt-x / vt-d
@@ -360,570 +378,277 @@ fi
 }
 
 checkStatus(){
-memory=$(nvidia-smi --query-gpu=memory.total --format=csv | awk '/^memory/ {getline; print}' | awk '{print $1}')
-vgpuScriptPath="/root/vgpu_unlock/scripts/vgpu-name.sh"
-currentType=$($vgpuScriptPath -p ALL | grep -w "$(mdevctl list | grep -m1 nvidia | awk '{print $3}')")
-Vnum=$(echo "$currentType" | grep -o '[[:digit:]]*' | sed -n '2p')
-Vmemory=$(($memory / 1000))
-float=$(($Vmemory / $Vnum))
+  memory=$(nvidia-smi --query-gpu=memory.total --format=csv | awk '/^memory/ {getline; print}' | awk '{print $1}')
+  vgpuScriptPath="/root/vgpu_unlock/scripts/vgpu-name.sh"
+  currentType=$($vgpuScriptPath -p ALL | grep -w "$(mdevctl list | grep -m1 nvidia | awk '{print $3}')")
+  Vnum=$(echo "$currentType" | grep -o '[[:digit:]]*' | sed -n '2p')
+  Vmemory=$(($memory / 1000))
+  float=$(($Vmemory / $Vnum))
 
-if [ $L = "cn" ];then
-echo "$(tput setaf 2)=======================================================================
-  - 物理显卡参数
-  型号：$(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
-  总线：$(nvidia-smi --query-gpu=gpu_bus_id --format=csv | sed -n '2p')
-  温度：$(nvidia-smi --query-gpu=temperature.gpu --format=csv | sed -n '2p')°C
-  功耗：$(nvidia-smi --query-gpu=power.draw --format=csv | sed -n '2p')
-  显存：$memory兆
+  if [ $L = "cn" ];then # CN
+  echo "$(tput setaf 2)  ===================================================================
+    - 物理显卡参数
+    型号：$(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
+    总线：$(nvidia-smi --query-gpu=gpu_bus_id --format=csv | sed -n '2p')
+    温度：$(nvidia-smi --query-gpu=temperature.gpu --format=csv | sed -n '2p')°C
+    功耗：$(nvidia-smi --query-gpu=power.draw --format=csv | sed -n '2p')
+    显存：$memory兆
 
-  - 切分建议
-  1）当切分为1G显存时，可同时运行$(($Vmemory / 1))台VM虚拟机
-  2）当切分为2G显存时，可同时运行$(($Vmemory / 2))台VM虚拟机
-  3）当切分为3G显存时，可同时运行$(($Vmemory / 3))台VM虚拟机
-  4）当切分为4G显存时，可同时运行$(($Vmemory / 4))台VM虚拟机
-  5）当切分为6G显存时，可同时运行$(($Vmemory / 6))台VM虚拟机
-  6）当切分为8G显存时，可同时运行$(($Vmemory / 8))台VM虚拟机
+    - 切分建议
+    1）当切分为1G显存时，可同时运行$(($Vmemory / 1))台VM虚拟机
+    2）当切分为2G显存时，可同时运行$(($Vmemory / 2))台VM虚拟机
+    3）当切分为3G显存时，可同时运行$(($Vmemory / 3))台VM虚拟机
+    4）当切分为4G显存时，可同时运行$(($Vmemory / 4))台VM虚拟机
+    5）当切分为6G显存时，可同时运行$(($Vmemory / 6))台VM虚拟机
+    6）当切分为8G显存时，可同时运行$(($Vmemory / 8))台VM虚拟机
 
-  - 当前切分状态
-  vGPU切分型号：$currentType
-  当前vGPU显存："$Vnum"G
-  可供使用的vGPU数量：$float个
-                                                              -- by ksh
-=======================================================================$(tput sgr 0)"
+    - 当前切分状态
+    vGPU切分型号：$currentType
+    当前vGPU显存："$Vnum"G
+    可供使用的vGPU数量：$float个
+                                                                -- by ksh
+  =======================================================================$(tput sgr 0)"
 
-else
-echo "$(tput setaf 2)=======================================================================
-  - Graphic Card
-  Type: $(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
-  BusID: $(nvidia-smi --query-gpu=gpu_bus_id --format=csv | sed -n '2p')
-  Temp: $(nvidia-smi --query-gpu=temperature.gpu --format=csv | sed -n '2p')°C
-  Power: $(nvidia-smi --query-gpu=power.draw --format=csv | sed -n '2p')
-  Vram: $memory Mib
+  else # EN
+  echo "$(tput setaf 2)  ===================================================================
+    - Graphic Card
+    Type: $(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
+    BusID: $(nvidia-smi --query-gpu=gpu_bus_id --format=csv | sed -n '2p')
+    Temp: $(nvidia-smi --query-gpu=temperature.gpu --format=csv | sed -n '2p')°C
+    Power: $(nvidia-smi --query-gpu=power.draw --format=csv | sed -n '2p')
+    Vram: $memory Mib
 
-  - Slice Tips
-  1) When slicing to 1G Vram, it can run up to $(($Vmemory / 1)) VM simultaneously
-  2) When slicing to 2G Vram, it can run up to $(($Vmemory / 2)) VM simultaneously
-  3) When slicing to 3G Vram, it can run up to $(($Vmemory / 3)) VM simultaneously
-  4) When slicing to 4G Vram, it can run up to $(($Vmemory / 4)) VM simultaneously
-  5) When slicing to 6G Vram, it can run up to $(($Vmemory / 6)) VM simultaneously
-  6) When slicing to 8G Vram, it can run up to $(($Vmemory / 8)) VM simultaneously
+    - Slice Tips
+    1) When slicing to 1G Vram, it can run up to $(($Vmemory / 1)) VM simultaneously
+    2) When slicing to 2G Vram, it can run up to $(($Vmemory / 2)) VM simultaneously
+    3) When slicing to 3G Vram, it can run up to $(($Vmemory / 3)) VM simultaneously
+    4) When slicing to 4G Vram, it can run up to $(($Vmemory / 4)) VM simultaneously
+    5) When slicing to 6G Vram, it can run up to $(($Vmemory / 6)) VM simultaneously
+    6) When slicing to 8G Vram, it can run up to $(($Vmemory / 8)) VM simultaneously
 
-  - vGPU slicing status
-  vGPU type: $currentType
-  Current vRam: "$Vnum"G
-  Current Available Count: $float
-                                                              -- by ksh
-=======================================================================$(tput sgr 0)" 
-fi
+    - vGPU slicing status
+    vGPU type: $currentType
+    Current vRam: "$Vnum"G
+    Current Available Count: $float
+                                                                -- by ksh
+  =======================================================================$(tput sgr 0)" 
+  fi
 }
 
 chVram(){
-
-startVramSlice(){
-PCI="$(lspci | grep -i nvidia | grep -i vga | awk '{print $1}')"
-vxQ="$($vgpuScriptPath -p ALL | grep -e -"$selectVram"Q | awk '{print $3}')"
-
-memory=$(nvidia-smi --query-gpu=memory.total --format=csv | awk '/^memory/ {getline; print}' | awk '{print $1}')
-
-killvgpu(){
-  mdevctl stop -u $AAA
-  mdevctl stop -u $BBB
-  mdevctl stop -u $CCC
-  mdevctl stop -u $DDD
-  mdevctl stop -u $EEE
-  mdevctl stop -u $FFF
-  mdevctl stop -u $GGG
-  mdevctl stop -u $HHH
-  mdevctl stop -u $III
-  mdevctl stop -u $JJJ
-  mdevctl stop -u $KKK
-  OUTPUT=$(mdevctl list)
-  echo "${OUTPUT}Released mdev devices 重新释放所有mdev设备"
-}
-
-killvgpu
-
-mdevctl start -u $AAA -p 0000:$PCI --type $vxQ
-mdevctl start -u $BBB -p 0000:$PCI --type $vxQ
-mdevctl start -u $CCC -p 0000:$PCI --type $vxQ
-mdevctl start -u $DDD -p 0000:$PCI --type $vxQ
-mdevctl start -u $EEE -p 0000:$PCI --type $vxQ
-mdevctl start -u $FFF -p 0000:$PCI --type $vxQ
-mdevctl start -u $GGG -p 0000:$PCI --type $vxQ
-mdevctl start -u $HHH -p 0000:$PCI --type $vxQ
-mdevctl start -u $III -p 0000:$PCI --type $vxQ
-mdevctl start -u $JJJ -p 0000:$PCI --type $vxQ
-mdevctl start -u $KKK -p 0000:$PCI --type $vxQ
-
-echo "
-[Unit]
-Description=ksh start mdev devices at system startup
-After=default.target
-[Service]
-Type=oneshot
-ExecStart=mdevctl start -u $AAA -p 0000:$PCI --type $vxQ
-ExecStart=mdevctl start -u $BBB -p 0000:$PCI --type $vxQ
-ExecStart=mdevctl start -u $CCC -p 0000:$PCI --type $vxQ
-ExecStart=mdevctl start -u $DDD -p 0000:$PCI --type $vxQ
-ExecStart=mdevctl start -u $EEE -p 0000:$PCI --type $vxQ
-ExecStart=mdevctl start -u $FFF -p 0000:$PCI --type $vxQ
-ExecStart=mdevctl start -u $GGG -p 0000:$PCI --type $vxQ
-ExecStart=mdevctl start -u $HHH -p 0000:$PCI --type $vxQ
-ExecStart=mdevctl start -u $III -p 0000:$PCI --type $vxQ
-ExecStart=mdevctl start -u $JJJ -p 0000:$PCI --type $vxQ
-ExecStart=mdevctl start -u $KKK -p 0000:$PCI --type $vxQ
-ExecStartPost=/bin/sleep 10
-[Install]
-WantedBy=default.target" > /etc/systemd/system/mdev-startup.service
-systemctl daemon-reload
-systemctl enable mdev-startup.service
-
-currentType=$($vgpuScriptPath -p ALL | grep -w "$(mdevctl list | grep -m1 nvidia | awk '{print $3}')")
-# Vnum=$(echo "$currentType" | grep -o '[[:digit:]]*' | sed -n '2p')
-Vnum=$($vgpuScriptPath -p ALL | grep -e -"$selectVram"Q | grep -o '[[:digit:]]*' | sed -n '2p')
-Vmemory=$(($memory / 1000))
-float=$(($Vmemory / $Vnum))
-
-echo "$(tput setaf 2)=======================================================================
-物理显存: $memory兆
-当前切分状态:
-切分型号: $currentType
-当前vGPU显存为"$Vnum"G，可供使用的vGPU数量为$float个
-
-TotalVram: $memory Mib
-Slicing Status:
-vGPU Type: $currentType
-Current vGPU vRAM is "$Vnum"G, available vGPU count is $float
-=======================================================================$(tput sgr 0)"
-}
-
-if [ $L = "cn" ];then # CN
-if (whiptail --title "同意条款及注意事项" --yes-button "同意" --no-button "返回"  --yesno "
-----------------------------------------------------------------------
-此脚本涉及的命令行操作具备一定程度的硬件损坏风险，固仅供测试
-部署及使用者需自行承担相关操作风险及后果，up主不对任何操作承担相关责任
-----------------------------------------------------------------------
-
-当系统重启后，脚本会自动读取上一次切分，无需重复设置
-当需要重新切分显存时，请再次运行该脚本
-
-请注意：请停止所有VM再运行该脚本！！！
-请注意：请停止所有VM再运行该脚本！！！
-请注意：请停止所有VM再运行该脚本！！！
-" 20 80) then
-
-selectVram=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.2 " --menu "
-Github: https://github.com/kevinshane/unlock
-选择配置，回车执行：" 25 60 15 \
-"a" "切分为1G显存" \
-"b" "切分为2G显存" \
-"c" "切分为3G显存" \
-"d" "切分为4G显存" \
-"q" "回主界面" \
-3>&1 1>&2 2>&3)
-case "$selectVram" in
-a )	selectVram=1
-  ;;
-
-b ) selectVram=2
-  ;;
-
-c ) selectVram=3
-  ;;
-
-d ) selectVram=4
-  ;;
-
-q ) main;;
-esac
-startVramSlice
-else main
-fi
-
-else # EN
-
-if (whiptail --title "Agreement" --yes-button "I Agree" --no-button "Go Back"  --yesno "
-----------------------------------------------------------------------
-Script may possible damaging your harware, use at your own risk.
-You are responible to what you have done in the next step.
-Please do not use for commercial or any production environment.
-----------------------------------------------------------------------
-
-When PVE boots up, script remembers the last choice.
-PVE auto creates mdev devices, no need to manually creates.
-Run this script again when you need different vram type.
-The script by default creates Q-series type.
-
-Please STOP all VM before running this script !!!
-Please STOP all VM before running this script !!!
-Please STOP all VM before running this script !!!
-" 22 80) then
-
-selectVram=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.2 " --menu "
-Github: https://github.com/kevinshane/unlock
-select options: " 25 60 15 \
-"a" "slice to 1G vRam" \
-"b" "slice to 2G vRam" \
-"c" "slice to 3G vRam" \
-"d" "slice to 4G vRam" \
-"q" "back to Main Menu" \
-3>&1 1>&2 2>&3)
-case "$selectVram" in
-a )	selectVram=1
-  ;;
-
-b ) selectVram=2
-  ;;
-
-c ) selectVram=3
-  ;;
-
-d ) selectVram=4
-  ;;
-
-q ) main;;
-esac
-startVramSlice
-else main
-fi
-
-fi
-}
-
-deployQuadro(){
-
-  runQuadro(){
-    IDofTU="1EB1" #RTX4000
-    SubIDofTU="12A0"
-
-    IDofGP="1BB0" #P5000
-    SubIDofGP="11B2"
-
-    IDofGM="13F0" #M5000
-    SubIDofGM="1152"
-
-    # modify vm conf depends on gpu architecture
-    if [ `grep -E "$AAA|$BBB|$CCC|$DDD|$EEE|$FFF|$GGG|$HHH|$III|$JJJ|$KKK" /etc/pve/qemu-server/$vmid.conf|wc -l` = 0 ]; then
-      # if GP pascal
-      if [ `lspci | grep GP | wc -l` = 1 ]; then
-        if [ $uuidnumb = 1 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$AAA,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $AAA" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 2 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$BBB,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $BBB" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 3 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$CCC,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $CCC" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 4 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$DDD,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $DDD" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 5 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$EEE,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $EEE" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 6 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$FFF,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $FFF" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 7 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$GGG,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $GGG" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 8 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$HHH,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $HHH" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 9 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$III,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $III" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 10 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$JJJ,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $JJJ" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 11 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$KKK,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $KKK" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-      
-      fi
-
-      # if TU turling  
-      if [ `lspci | grep TU | wc -l` = 1 ]; then
-
-        sed -i '/mdev/d' /etc/pve/qemu-server/$vmid.conf
-        sed -i '/-uuid/d' /etc/pve/qemu-server/$vmid.conf
-
-        if [ $uuidnumb = 1 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$AAA,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $AAA" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 2 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$BBB,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $BBB" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 3 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$CCC,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $CCC" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 4 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$DDD,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $DDD" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 5 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$EEE,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $EEE" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 6 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$FFF,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $FFF" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 7 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$GGG,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $GGG" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 8 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$HHH,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $HHH" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 9 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$III,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $III" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 10 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$JJJ,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $JJJ" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 11 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$KKK,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $KKK" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-      
-      fi
-
-      # if GM maxwell
-      if [ `lspci | grep GM | wc -l` = 1 ]; then
-        if [ $uuidnumb = 1 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$AAA,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $AAA" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 2 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$BBB,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $BBB" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 3 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$CCC,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $CCC" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 4 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$DDD,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $DDD" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 5 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$EEE,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $EEE" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 6 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$FFF,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $FFF" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 7 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$GGG,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $GGG" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 8 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$HHH,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $HHH" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 9 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$III,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $III" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 10 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$JJJ,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $JJJ" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-        if [ $uuidnumb = 11 ]; then
-        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$KKK,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $KKK" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
-        fi
-
-
-      fi
-
-      # otherwise
-      else
-      echo "$(tput setaf 1)Already modified! Please check VM conf: $vmid $(tput setaf 0)"
-      echo "$(tput setaf 1)虚拟机ID$vmid已存在Quadro显卡，已跳过！ $(tput setaf 0)"
-    fi
+  startVramSlice(){
+    PCI="$(lspci | grep -i nvidia | grep -i vga | awk '{print $1}')"
+    vxQ="$($vgpuScriptPath -p ALL | grep -e -"$selectVram"Q | awk '{print $3}')"
+
+    memory=$(nvidia-smi --query-gpu=memory.total --format=csv | awk '/^memory/ {getline; print}' | awk '{print $1}')
+
+    killvgpu(){
+      mdevctl stop -u $AAA
+      mdevctl stop -u $BBB
+      mdevctl stop -u $CCC
+      mdevctl stop -u $DDD
+      mdevctl stop -u $EEE
+      mdevctl stop -u $FFF
+      mdevctl stop -u $GGG
+      mdevctl stop -u $HHH
+      mdevctl stop -u $III
+      mdevctl stop -u $JJJ
+      mdevctl stop -u $KKK
+      OUTPUT=$(mdevctl list)
+      echo "${OUTPUT}Released mdev devices 重新释放所有mdev设备"
+    }
+
+    killvgpu
+
+    mdevctl start -u $AAA -p 0000:$PCI --type $vxQ
+    mdevctl start -u $BBB -p 0000:$PCI --type $vxQ
+    mdevctl start -u $CCC -p 0000:$PCI --type $vxQ
+    mdevctl start -u $DDD -p 0000:$PCI --type $vxQ
+    mdevctl start -u $EEE -p 0000:$PCI --type $vxQ
+    mdevctl start -u $FFF -p 0000:$PCI --type $vxQ
+    mdevctl start -u $GGG -p 0000:$PCI --type $vxQ
+    mdevctl start -u $HHH -p 0000:$PCI --type $vxQ
+    mdevctl start -u $III -p 0000:$PCI --type $vxQ
+    mdevctl start -u $JJJ -p 0000:$PCI --type $vxQ
+    mdevctl start -u $KKK -p 0000:$PCI --type $vxQ
+
+    mdevctl define --auto --uuid $AAA
+    mdevctl define --auto --uuid $BBB
+    mdevctl define --auto --uuid $CCC
+    mdevctl define --auto --uuid $DDD
+    mdevctl define --auto --uuid $EEE
+    mdevctl define --auto --uuid $FFF
+    mdevctl define --auto --uuid $GGG
+    mdevctl define --auto --uuid $HHH
+    mdevctl define --auto --uuid $III
+    mdevctl define --auto --uuid $JJJ
+    mdevctl define --auto --uuid $KKK
+
+    echo "
+    [Unit]
+    Description=ksh start mdev devices at system startup
+    After=default.target
+    [Service]
+    Type=oneshot
+    ExecStart=mdevctl start -u $AAA -p 0000:$PCI --type $vxQ
+    ExecStart=mdevctl start -u $BBB -p 0000:$PCI --type $vxQ
+    ExecStart=mdevctl start -u $CCC -p 0000:$PCI --type $vxQ
+    ExecStart=mdevctl start -u $DDD -p 0000:$PCI --type $vxQ
+    ExecStart=mdevctl start -u $EEE -p 0000:$PCI --type $vxQ
+    ExecStart=mdevctl start -u $FFF -p 0000:$PCI --type $vxQ
+    ExecStart=mdevctl start -u $GGG -p 0000:$PCI --type $vxQ
+    ExecStart=mdevctl start -u $HHH -p 0000:$PCI --type $vxQ
+    ExecStart=mdevctl start -u $III -p 0000:$PCI --type $vxQ
+    ExecStart=mdevctl start -u $JJJ -p 0000:$PCI --type $vxQ
+    ExecStart=mdevctl start -u $KKK -p 0000:$PCI --type $vxQ
+    ExecStartPost=/bin/sleep 10
+    [Install]
+    WantedBy=default.target" > /etc/systemd/system/mdev-startup.service
+    systemctl daemon-reload
+    systemctl enable mdev-startup.service
+
+    currentType=$($vgpuScriptPath -p ALL | grep -w "$(mdevctl list | grep -m1 nvidia | awk '{print $3}')")
+    # Vnum=$(echo "$currentType" | grep -o '[[:digit:]]*' | sed -n '2p')
+    Vnum=$($vgpuScriptPath -p ALL | grep -e -"$selectVram"Q | grep -o '[[:digit:]]*' | sed -n '2p')
+    Vmemory=$(($memory / 1000))
+    float=$(($Vmemory / $Vnum))
+
+  echo "$(tput setaf 2)
+  ===================================================================
+  物理显存: $memory兆
+  当前切分状态:
+  切分型号: $currentType
+  当前vGPU显存为"$Vnum"G，可供使用的vGPU数量为$float个
+
+  TotalVram: $memory Mib
+  Slicing Status:
+  vGPU Type: $currentType
+  Current vGPU vRAM is "$Vnum"G, available vGPU count is $float
+  ===================================================================$(tput sgr 0)"
   }
 
   if [ $L = "cn" ];then # CN
-  if (whiptail --title "同意条款及注意事项" --yes-button "同意" --no-button "返回"  --yesno "
-  自动检测主板当前的物理显卡
-  并直通为相对应架构的专业卡
+    if (whiptail --title "同意条款及注意事项" --yes-button "同意" --no-button "返回"  --yesno "
+    ----------------------------------------------------------------------
+    此脚本涉及的命令行操作具备一定程度损坏硬件的风险，固仅供测试
+    此脚本核心代码均来自网络，up主仅搬运流程并自动化，固版权归属原作者
+    部署及使用者需自行承担相关操作风险及后果，up主不对操作承担任何相关责任
+    ----------------------------------------------------------------------
 
-  - 如为9系，则自动解锁为M5000专业显卡
-  - 如为10系，则自动解锁为P5000专业显卡
-  - 如为20系，则自动解锁为RTX4000专业显卡
+    当系统重启后，脚本会自动读取上一次切分，无需重复设置
+    当需要重新切分显存时，请再次运行该脚本
 
-  请注意：该脚本不支持6,7,8系和30系物理显卡" 15 80) then
-    typeuuid(){ # typing uuid
-      uuidnumb=$(whiptail --inputbox "请输入UUID，默认是1，可选范围1-11" 8 60 1 --title "定义UUID值" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ $exitstatus = 0 ]; then
-          if [ "$uuidnumb" -le 11 -a "$vmid" -ge 1 ]; then runQuadro
-          else 
-          whiptail --title "Warnning" --msgbox "Invalid UUID. Choose between 1-11! 请重新输入1-11范围内的数字！" 10 60
-          typeuuid
-          fi
-      fi
-    }
+    请注意：请停止所有VM再运行该脚本！！！
+    请注意：请停止所有VM再运行该脚本！！！
+    请注意：请停止所有VM再运行该脚本！！！
+    " 20 80) then
 
-    vmid=$(whiptail --inputbox "请输入你希望添加vGPU的虚拟机ID值，默认是101" 8 60 101 --title "输入VM的ID值" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus = 0 ]; then
-        if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then typeuuid
-        else 
-        whiptail --title "Warnning" --msgbox "请重新输入100-999范围内的数字！" 10 60
-        deployQuadro
-        fi
-    fi
-  else main
-  fi
+    selectVram=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.2 " --menu "
+    Github: https://github.com/kevinshane/unlock
+    选择配置，回车执行：" 25 60 15 \
+    "a" "切分为1G显存" \
+    "b" "切分为2G显存" \
+    "c" "切分为3G显存" \
+    "d" "切分为4G显存" \
+    "q" "回主界面" \
+    3>&1 1>&2 2>&3)
+    case "$selectVram" in
+    a )	selectVram=1
+      ;;
 
+    b ) selectVram=2
+      ;;
 
-    # # wip
-    # vmlist=($(qm list | sed '1d' | awk '{print $1}'))
-    # # array=($(sed -E 's/([[:alnum:]]+)/"&"/g;s/ /,/g' <<< ${vmlist[@]}))
-    # array=($(sed -E 's/([[:alnum:]]+)/"&"/g' <<< ${vmlist[@]}))
-    # vmid=$(whiptail --title "choose VM" --checklist "Select VM" 22 80 14 "${array[@]}")
+    c ) selectVram=3
+      ;;
 
-  else # EN
-    if (whiptail --title "Notice" --yes-button "I Agree" --no-button "Go Back"  --yesno "
-    Script auto detect graphics card on motherboard
-    Then passthrough with appropriate Quadro
+    d ) selectVram=4
+      ;;
 
-    - 9 series unlock to a M4000 Quadro
-    - 10 series unlock to a P5000 Quadro
-    - 20 series unlock to a RTX4000 Quadro
-
-    Please be aware, 6,7,8 and 30 series are not supported" 15 80) then
-    typeuuid(){ # typing uuid
-        uuidnumb=$(whiptail --inputbox "Typing UUID, 1-11 available. Default is 1" 8 60 1 --title "Define UUID" 3>&1 1>&2 2>&3)
-        exitstatus=$?
-        if [ $exitstatus = 0 ]; then
-            if [ "$uuidnumb" -le 11 -a "$vmid" -ge 1 ]; then runQuadro
-            else 
-            whiptail --title "Warnning" --msgbox "Invalid UUID. Choose between 1-11!" 10 60
-            typeuuid
-            fi
-        fi
-    }
-    
-    vmid=$(whiptail --inputbox "What's the VM id you want to add a Quadro? default is 101" 8 60 101 --title "输入VM的ID值" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus = 0 ]; then
-        if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then typeuuid
-        else 
-        whiptail --title "Warnning" --msgbox "Invalid VM ID. Choose between 100-999!" 10 60
-        fi
-    fi
+    q ) main;;
+    esac
+    startVramSlice
     else main
     fi
+
+  else # EN
+
+    if (whiptail --title "Agreement" --yes-button "I Agree" --no-button "Go Back"  --yesno "
+    ----------------------------------------------------------------
+    Script may possible damaging your harware, use at your own risk.
+    I'll not take responible to what you have done in the next step.
+    Please do not use for commercial or any production environment.
+    Credits to vgpu_unlock github that make this happen.
+    ----------------------------------------------------------------
+
+    When PVE boots up, script remembers the last choice.
+    PVE auto creates mdev devices, no need to manually creates.
+    Run this script again when you need different vram type.
+    The script by default creates Q-series type.
+
+    Please STOP all VM before running this script !!!
+    Please STOP all VM before running this script !!!
+    Please STOP all VM before running this script !!!
+    " 24 80) then
+
+    selectVram=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.2 " --menu "
+    Github: https://github.com/kevinshane/unlock
+    select options: " 25 60 15 \
+    "a" "slice to 1G vRam" \
+    "b" "slice to 2G vRam" \
+    "c" "slice to 3G vRam" \
+    "d" "slice to 4G vRam" \
+    "q" "back to Main Menu" \
+    3>&1 1>&2 2>&3)
+    case "$selectVram" in
+    a )	selectVram=1
+      ;;
+
+    b ) selectVram=2
+      ;;
+
+    c ) selectVram=3
+      ;;
+
+    d ) selectVram=4
+      ;;
+
+    q ) main;;
+    esac
+    startVramSlice
+    else main
+    fi
+
   fi
 }
 
 deployvGPU(){
-
   PCI="$(lspci | grep -i nvidia | grep -i vga | awk '{print $1}')"
-  vGPUtype="$(mdevctl list | grep -m1 nvidia | awk '{print $3}')"
+  vGPUtype="$(mdevctl list -d | grep -m1 nvidia | awk '{print $3}')" # defined mdev
 
   vGPUassign(){
 
     # delete any quadro conf if exist
     sed -i '/vfio-pci,sysfsdev=/d' /etc/pve/qemu-server/$vmid.conf
     sed -i '/mdev/d' /etc/pve/qemu-server/$vmid.conf
-    sed -i '/-uuid/d' /etc/pve/qemu-server/$vmid.conf
+    sed -i '/args: -uuid/d' /etc/pve/qemu-server/$vmid.conf
 
     # adding mdev
     sed -i -r "1i hostpci0: $PCI,mdev=$vGPUtype" /etc/pve/qemu-server/$vmid.conf
 
-    # base for uuid that user typed
-    case $uuidnumb in
-      1) sed -i -r "1i args: -uuid $AAA" /etc/pve/qemu-server/$vmid.conf ;;
-      2) sed -i -r "1i args: -uuid $BBB" /etc/pve/qemu-server/$vmid.conf ;;
-      3) sed -i -r "1i args: -uuid $CCC" /etc/pve/qemu-server/$vmid.conf ;;
-      4) sed -i -r "1i args: -uuid $DDD" /etc/pve/qemu-server/$vmid.conf ;;
-      5) sed -i -r "1i args: -uuid $EEE" /etc/pve/qemu-server/$vmid.conf ;;
-      6) sed -i -r "1i args: -uuid $FFF" /etc/pve/qemu-server/$vmid.conf ;;
-      7) sed -i -r "1i args: -uuid $GGG" /etc/pve/qemu-server/$vmid.conf ;;
-      8) sed -i -r "1i args: -uuid $HHH" /etc/pve/qemu-server/$vmid.conf ;;
-      9) sed -i -r "1i args: -uuid $III" /etc/pve/qemu-server/$vmid.conf ;;
-      10) sed -i -r "1i args: -uuid $JJJ" /etc/pve/qemu-server/$vmid.conf ;;
-      11) sed -i -r "1i args: -uuid $KKK" /etc/pve/qemu-server/$vmid.conf ;;
-      *) echo "$(tput setaf 1)Invalid UUID! 无效UUID！$(tput setaf 0)"
-    esac
+    # adding uuid to conf
+    sed -i -r "1i args: -uuid 00000000-0000-0000-0000-000000000$vmid" /etc/pve/qemu-server/$vmid.conf
 
     echo "$(tput setaf 2)vGPU assigned! 已添加vGPU！$(tput setaf 0)"
-    echo "$(tput setaf 2)vGPU: $($vgpuScriptPath -p ALL | grep -w "$(mdevctl list | grep -m1 nvidia | awk '{print $3}')") $(tput setaf 0)"
+    echo "$(tput setaf 2)vGPU: $($vgpuScriptPath -p ALL | grep -w "$(mdevctl list -d | grep -m1 nvidia | awk '{print $3}')") $(tput setaf 0)"
 
   }
 
   runUserInput(){
-    typeuuid(){ # typing uuid
-      uuidnumb=$(whiptail --inputbox "请输入UUID，默认是1，可选范围1-11" 8 60 1 --title "定义UUID值" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ $exitstatus = 0 ]; then
-          if [ "$uuidnumb" -le 11 -a "$vmid" -ge 1 ]; then vGPUassign
-          else 
-          whiptail --title "Warnning" --msgbox "Invalid UUID. Choose between 1-11! 请重新输入1-11范围内的数字！" 10 60
-          typeuuid
-          fi
-      fi
-    }
-
     vmid=$(whiptail --inputbox "请输入你希望添加vGPU的虚拟机ID值，默认是101" 8 60 101 --title "输入VM的ID值" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then typeuuid
+      if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then vGPUassign
       else 
       whiptail --title "Warnning" --msgbox "请重新输入100-999范围内的数字！" 10 60
       deployvGPU
@@ -933,20 +658,18 @@ deployvGPU(){
 
   if [ $L = "cn" ];then # CN
     if (whiptail --title "同意条款及注意事项" --yes-button "同意" --no-button "返回"  --yesno "
-    此脚本自动将原生vGPU直通给指定虚拟机，并获得原生物理显卡所有硬件加速特性
-    如开启CUDA加速，开启OpenCL加速，适用于CUDA渲染，视频输出等工作
+    ----------------------------------------------------------------------
+    此脚本涉及的命令行操作具备一定程度损坏硬件的风险，固仅供测试
+    此脚本核心代码均来自网络，up主仅搬运流程并自动化，固版权归属原作者
+    部署及使用者需自行承担相关操作风险及后果，up主不对操作承担任何相关责任
+    ----------------------------------------------------------------------
 
-    开启的必要条件如下：
-    1）购买正版vGPU授权，即vDWS授权
-    2）自建linux授权服务器，并设置好授权信息
-    3）为每台虚拟机客户端赋予vDWS授权，一机对应一个授权
-    以上条件缺一不可
+    脚本自动将已切分好的vGPU添加到指定VM，从而获得高性能硬件加速
 
-    脚本仅自动化vGPU直通，绿色环保无广告:)
+    此脚本仅自动化vGPU直通，绿色环保无痛部署:P
     up主本人不提供任何相关授权信息及购买渠道
-    一切部署授权费用等信息，请咨询相关机构购买正版许可
+    一切关于部署授权费用等信息，请咨询专业机构购买正版许可
     或自行注册申请90天试用授权
-
     " 20 80) then runUserInput
     else main
     fi
@@ -954,13 +677,13 @@ deployvGPU(){
   else # EN
 
     if (whiptail --title "Agreement" --yes-button "I Agree" --no-button "Go Back"  --yesno "
-    This script will auto assigning vGPU to a VM
-    This enables CUDA and OpenCL, useful for cuda rendering or video output
-
-    In order to make it work, you need to:
-    1) purchase legit vGPU license, aka vDWS license
-    2) setup a license server and assign the .bin file
-    3) setup lic server ip addr in guest VM
+    ----------------------------------------------------------------
+    Script may possible damaging your harware, use at your own risk.
+    I'll not take responible to what you have done in the next step.
+    Please do not use for commercial or any production environment.
+    Credits to vgpu_unlock github that make this happen.
+    ----------------------------------------------------------------
+    Auto assigning 'sliced' vGPU to VM
 
     This script will only automate the assigning process.
     I will not provide any license info for this script.
@@ -1044,21 +767,33 @@ resetDefaultvGPU(){
     mdevctl stop -u $JJJ
     mdevctl stop -u $KKK
 
+    mdevctl undefine -u $AAA
+    mdevctl undefine -u $BBB
+    mdevctl undefine -u $CCC
+    mdevctl undefine -u $DDD
+    mdevctl undefine -u $EEE
+    mdevctl undefine -u $FFF
+    mdevctl undefine -u $GGG
+    mdevctl undefine -u $HHH
+    mdevctl undefine -u $III
+    mdevctl undefine -u $JJJ
+    mdevctl undefine -u $KKK
+
     echo "$(tput setaf 2)Done! 初始化完成！$(tput setaf 0)"
   }
 
   if [ $L = "cn" ];then # CN
     if (whiptail --title "初始化状态" --yes-button "继续" --no-button "返回"  --yesno "
-    脚本将初始化所有相关vGPU和Quadro设置
-    适用于vGPU授权状态下无缝切换成无授权的Quadro，整个过程无需重启
+    初始化所有相关vGPU和Quadro设置，整个过程无需重启
     或者你希望重新设置切分，此脚本将恢复到最初状态
 
     1）释放所有mdev设备
-    2）删除所有跟vGPU相关的自启动服务
-    3）删除所有虚拟机conf跟vGPU相关的设置
-    4）所有虚拟机将恢复成无显卡直通状态
+    2）取消定义所有mdev设备
+    3）删除所有跟vGPU相关的自启动服务
+    4）删除所有虚拟机conf跟vGPU相关的设置
+    5）所有虚拟机将恢复成无显卡直通的初始化状态
 
-    重新切分时，请再次运行步骤（d）重新切分，再自行选择（e）或（f）
+    如需重新切分，请再次运行步骤（d）重新切分
     " 20 80) then runReset
     else main
     fi
@@ -1066,13 +801,12 @@ resetDefaultvGPU(){
     if (whiptail --title "Reset to default" --yes-button "Continue" --no-button "Go Back"  --yesno "
     Script will auto reset everthing related to vGPU/Quadro
     Script doesn't require reboot after reset process
-    Useful for switching between vGPU license mode and Quadro mode
-    Or you mess up something and want to redo the whole slicing process
 
     1) Release all mdev devices to default
-    2) Delete all startup services
-    3) Delete all vGPU related settings for all VM's conf
-    4) All VM will reset to no-vGPU mode
+    2) Undefine all mdev devices
+    3) Delete all startup services
+    4) Delete all vGPU related settings for all VM's conf
+    5) All VM will reset to no-vGPU mode
 
     Re-run step(d) to re-slice the vGPU, then choose (e) or (f) step
     " 20 80) then runReset
@@ -1081,9 +815,73 @@ resetDefaultvGPU(){
   fi
 }
 
+realtimeHW(){
+  memory=$(nvidia-smi --query-gpu=memory.total --format=csv | awk '/^memory/ {getline; print}' | awk '{print $1}')
+  MaxMemClk=$(nvidia-smi -q -d CLOCK | grep Memory | sed -n '4p' | awk '{print $3}')
+  MaxSMClk=$(nvidia-smi -q -d CLOCK | grep SM | sed -n '3p' | awk '{print $3}')
+
+  if [[ $L = "cn" ]];then # CN
+  while :; do
+  echo "
+  ======realtime=======
+  $(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
+  温度：$(nvidia-smi --query-gpu=temperature.gpu --format=csv | sed -n '2p')°C
+  性能：$(nvidia-smi --query-gpu=pstate --format=csv | sed -n '2p')
+  功耗：$(nvidia-smi --query-gpu=power.draw --format=csv | sed -n '2p')
+  占用：$(nvidia-smi --query-gpu=utilization.gpu --format=csv | sed -n '2p')
+
+  显存占用
+  已用：$(nvidia-smi --query-gpu=memory.used --format=csv | sed -n '2p')
+  空闲：$(nvidia-smi --query-gpu=memory.free --format=csv | sed -n '2p')
+
+  实时频率
+  核心：$(nvidia-smi --query-gpu=clocks.sm --format=csv | sed -n '2p') / $MaxSMClk MHz
+  显存：$(nvidia-smi --query-gpu=clocks.mem --format=csv | sed -n '2p') / $MaxMemClk MHz
+  图形：$(nvidia-smi --query-gpu=clocks.gr --format=csv | sed -n '2p') / $MaxSMClk MHz
+
+  $(nvidia-smi --query-gpu=timestamp --format=csv | sed -n '2p')
+  =========ksh========="
+  sleep 2
+  done
+
+  else # EN
+
+  while :; do
+  echo "
+  ======realtime=======
+  $(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
+  Temp:  $(nvidia-smi --query-gpu=temperature.gpu --format=csv | sed -n '2p')°C
+  Perf:  $(nvidia-smi --query-gpu=pstate --format=csv | sed -n '2p')
+  Power: $(nvidia-smi --query-gpu=power.draw --format=csv | sed -n '2p')
+  Usage: $(nvidia-smi --query-gpu=utilization.gpu --format=csv | sed -n '2p')
+
+  Vram Usage
+  Use:   $(nvidia-smi --query-gpu=memory.used --format=csv | sed -n '2p')
+  Free:  $(nvidia-smi --query-gpu=memory.free --format=csv | sed -n '2p')
+
+  Realtime Clock Speed
+  Core:  $(nvidia-smi --query-gpu=clocks.sm --format=csv | sed -n '2p') / $MaxSMClk MHz
+  Mem:   $(nvidia-smi --query-gpu=clocks.mem --format=csv | sed -n '2p') / $MaxMemClk MHz
+  Graph: $(nvidia-smi --query-gpu=clocks.gr --format=csv | sed -n '2p') / $MaxSMClk MHz
+
+  $(nvidia-smi --query-gpu=timestamp --format=csv | sed -n '2p')
+  =========ksh========="
+  sleep 2
+  done
+
+  fi
+
+}
+
 # --------------------------------------------------------- end function --------------------------------------------------------- #
 
 main(){
+  if (whiptail --title "Language 选择语言" --yes-button "中文" --no-button "English"  --yesno "Choose Language - 选择语言:" 10 60) then
+        L="cn"
+    else
+        L="en"
+  fi
+
   if [ $L = "cn" ];then
   OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.2 " --menu "
   Github: https://github.com/kevinshane/unlock
@@ -1092,11 +890,11 @@ main(){
   "b" "解锁vGPU" \
   "c" "美化系统" \
   "d" "切分（重切分）显存" \
-  "e" "直通Quadro到VM (无授权模式)" \
-  "f" "直通vGPU到VM (需授权服务器+正版授权)" \
-  "g" "部署授权服务器 (仅适用于正版授权vGPU)" \
+  "e" "部署vGPU到VM" \
+  "f" "部署授权服务器 (仅用于授权vGPU)" \
   "s" "查看当前状态" \
-  "r" "初始化所有vGPU状态" \
+  "r" "初始化vGPU状态" \
+  "t" "实时硬件状态" \
   "q" "退出程序" \
   3>&1 1>&2 2>&3)
   else
@@ -1107,11 +905,11 @@ main(){
   "b" "Unlock vGPU" \
   "c" "Beautify PVE" \
   "d" "Change VRAM Size" \
-  "e" "Deploy Quadro to VM (no lic mode)" \
-  "f" "Deploy vGPU to VM (licServer required)" \
-  "g" "Setup Licese Server (only for vGPU)" \
+  "e" "Deploy vGPU to VM" \
+  "f" "Setup Licese Server (only for vGPU license)" \
   "s" "Current GPU Status" \
   "r" "Reset all vGPU to default" \
+  "t" "Real time Hardware status" \
   "q" "Quit" \
   3>&1 1>&2 2>&3)
   fi
@@ -1121,21 +919,28 @@ main(){
   b ) startUnlock;;
   c ) startBeautify;;
   d ) chVram;;
-  e ) deployQuadro;;
-  f ) deployvGPU;;
-  g ) setupLXC;;
+  e ) deployvGPU;;
+  f ) setupLXC;;
   s ) checkStatus;;
   r ) resetDefaultvGPU;;
+  t ) realtimeHW;;
   q ) tput sgr 0
       exit;;
   esac
   tput sgr 0
 }
 
-if (whiptail --title "Language 选择语言" --yes-button "中文" --no-button "English"  --yesno "Choose Language - 选择语言:" 10 60) then
-      L="cn"
-  else
-      L="en"
+while getopts "t" opt; do
+  case ${opt} in
+    t ) 
+      realtimeHW
+      ;;
+    \? )
+      echo error "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+  esac
+done
+if [ "$opt" = "?" ]
+  then main
 fi
-
-main
