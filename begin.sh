@@ -295,9 +295,9 @@ echo "======================================================================="
 echo "$(tput setaf 2)step 1 --> installing lsd + bat 正在安装美化程序...$(tput sgr 0)"
 echo "======================================================================="
 wget https://github.com/Peltoche/lsd/releases/download/0.20.1/lsd_0.20.1_amd64.deb
-wget https://github.com/sharkdp/bat/releases/download/v0.18.0/bat_0.18.0_amd64.deb
+wget https://github.com/sharkdp/bat/releases/download/v0.18.1/bat_0.18.1_amd64.deb
 dpkg -i lsd_0.20.1_amd64.deb && rm lsd_0.20.1_amd64.deb
-dpkg -i bat_0.18.0_amd64.deb && rm bat_0.18.0_amd64.deb
+dpkg -i bat_0.18.1_amd64.deb && rm bat_0.18.1_amd64.deb
 if [ `grep "lsd" ~/.bashrc|wc -l` = 0 ];then
 cat <<EOF >> ~/.bashrc
 alias ls='lsd'
@@ -980,7 +980,7 @@ setupLXC(){
   restoreGZ(){ # start restore LXC
     if [ ! -f "/var/lib/vz/dump/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz" ];then
       echo "$(tput setaf 1)backup not exist, downloading...远程下载中，文件较大请耐心等候...$(tput setaf 0)"
-      wget https://github.com/kevinshane/unlock/raw/master/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz -P /var/lib/vz/dump/
+      $(tput setaf 0)wget https://github.com/kevinshane/unlock/raw/master/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz -P /var/lib/vz/dump/
       restoreGZ
     else
       pct restore 555 local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
