@@ -81,6 +81,12 @@ runUpdate(){
   # update
   apt update && apt upgrade -y && apt dist-upgrade -y
 
+  # adding unlock command
+  if [ `grep "alias unlock" ~/.bashrc|wc -l` = 0 ];then
+    echo "alias unlock='/root/begin.sh'" >> ~/.bashrc
+  else echo "$(tput setaf 2)√ Done unlock command! 已设置unlock命令$(tput sgr 0)"
+  fi
+
   echo "======================================================================="
   echo "$(tput setaf 2)Done PVE updated ! --> please reboot 搞定！请重启PVE$(tput sgr 0)"
   echo "======================================================================="
@@ -129,92 +135,92 @@ startUpdate(){
 }
 
 runUnlock(){
-cd /root/
-# driver="440.87"
-driver="450.80"
-# driver="460.32.04"
+  cd /root/
+  # driver="440.87"
+  driver="450.80"
+  # driver="460.32.04"
 
-# install apps
-echo "======================================================================="
-echo "$(tput setaf 2)installing apps... 正在安装必要软件$(tput sgr 0)"
-echo "======================================================================="
-for app in build-essential dkms pve-headers git python3-pip jq
-do
-  if [ `dpkg -s $app|grep Status|wc -l` = 1 ]; then echo "$(tput setaf 2)√ Already installed $app! 已安装$app$(tput sgr 0)"
-  else 
-    echo "$(tput setaf 1)× You don't have $app install! 未安装$app$(tput sgr 0)"
-    apt install -y $app
-    echo "$(tput setaf 2)√ Done $app installed! 已安装$app$(tput sgr 0)"
+  # install apps
+  echo "======================================================================="
+  echo "$(tput setaf 2)installing apps... 正在安装必要软件$(tput sgr 0)"
+  echo "======================================================================="
+  for app in build-essential dkms pve-headers git python3-pip jq
+  do
+    if [ `dpkg -s $app|grep Status|wc -l` = 1 ]; then echo "$(tput setaf 2)√ Already installed $app! 已安装$app$(tput sgr 0)"
+    else 
+      echo "$(tput setaf 1)× You don't have $app install! 未安装$app$(tput sgr 0)"
+      apt install -y $app
+      echo "$(tput setaf 2)√ Done $app installed! 已安装$app$(tput sgr 0)"
+    fi
+  done
+
+  if [ `pip3 install frida|wc -l` = 2 ]; then echo "$(tput setaf 2)√ Already installed $app! 已安装frida$(tput sgr 0)"
+  else pip3 install frida
   fi
-done
 
-if [ `pip3 install frida|wc -l` = 2 ]; then echo "$(tput setaf 2)√ Already installed $app! 已安装frida$(tput sgr 0)"
-else pip3 install frida
-fi
+  # Install driver
+  echo "======================================================================="
+  echo "$(tput setaf 2)installing Nvidia $driver Driver... 正在安装原版$driver显卡驱动程序$(tput sgr 0)"
+  echo "======================================================================="
+  cd /root/
+  if test -f "NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run";then 
+    chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+    /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
+    else
+    wget https://github.com/kevinshane/unlock/raw/master/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+    chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+    /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
+  fi
 
-# Install driver
-echo "======================================================================="
-echo "$(tput setaf 2)installing Nvidia $driver Driver... 正在安装原版$driver显卡驱动程序$(tput sgr 0)"
-echo "======================================================================="
-cd /root/
-if test -f "NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run";then 
-  chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
-  /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
+  # install vgpu_unlock
+  echo "======================================================================="
+  echo "$(tput setaf 2)unlocking... 正在解锁$(tput sgr 0)"
+  echo "======================================================================="
+  # vgpu_unlock
+  cd /root
+  if [ ! -d "/root/vgpu_unlock" ];then 
+    git clone https://github.com/DualCoder/vgpu_unlock.git && chmod -R +x /root/vgpu_unlock/
+  else echo "$(tput setaf 2)√ Done cloned unlock! 已下载unlock$(tput sgr 0)"
+  fi
+
+  # modify driver
+  if [ `grep "vgpu_unlock_hooks.c" /usr/src/nvidia-$driver/nvidia/os-interface.c|wc -l` = 0 ];then
+    sed -i '20a#include "/root/vgpu_unlock/vgpu_unlock_hooks.c"' /usr/src/nvidia-$driver/nvidia/os-interface.c
+  fi
+  if [ `grep "kern.ld" /usr/src/nvidia-$driver/nvidia/nvidia.Kbuild|wc -l` = 0 ];then
+    echo "ldflags-y += -T /root/vgpu_unlock/kern.ld" >> /usr/src/nvidia-$driver/nvidia/nvidia.Kbuild
+  fi
+  if [ `grep "vgpu_unlock" /lib/systemd/system/nvidia-vgpud.service|wc -l` = 0 ];then
+    sed -i 's#ExecStart=#ExecStart=/root/vgpu_unlock/vgpu_unlock #' /lib/systemd/system/nvidia-vgpud.service
+  fi
+  if [ `grep "vgpu_unlock" /lib/systemd/system/nvidia-vgpu-mgr.service|wc -l` = 0 ];then
+    sed -i 's#ExecStart=#ExecStart=/root/vgpu_unlock/vgpu_unlock #' /lib/systemd/system/nvidia-vgpu-mgr.service
+  fi
+
+  # reaload daemon
+  systemctl daemon-reload
+
+  # remove and reinstall driver
+  echo "======================================================================="
+  echo "$(tput setaf 2)reconfiguring driver... 正在重新构建驱动$(tput sgr 0)"
+  echo "======================================================================="
+  dkms remove  -m nvidia -v $driver --all
+  dkms install -m nvidia -v $driver
+
+  # install mdev
+  echo "======================================================================="
+  echo "$(tput setaf 2)installing mdev... 正在安装mdev设备$(tput sgr 0)"
+  echo "======================================================================="
+  cd /root
+  if [ -x /usr/sbin/mdevctl ];then echo "$(tput setaf 2)√ mdev installed! 已安装mdev$(tput sgr 0)"
   else
-  wget https://github.com/kevinshane/unlock/raw/master/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
-  chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
-  /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
-fi
+  git clone https://github.com/mdevctl/mdevctl.git
+  cd mdevctl
+  make install
+  fi
 
-# install vgpu_unlock
-echo "======================================================================="
-echo "$(tput setaf 2)unlocking... 正在解锁$(tput sgr 0)"
-echo "======================================================================="
-# vgpu_unlock
-cd /root
-if [ ! -d "/root/vgpu_unlock" ];then 
-  git clone https://github.com/DualCoder/vgpu_unlock.git && chmod -R +x /root/vgpu_unlock/
-else echo "$(tput setaf 2)√ Done cloned unlock! 已下载unlock$(tput sgr 0)"
-fi
-
-# modify driver
-if [ `grep "vgpu_unlock_hooks.c" /usr/src/nvidia-$driver/nvidia/os-interface.c|wc -l` = 0 ];then
-  sed -i '20a#include "/root/vgpu_unlock/vgpu_unlock_hooks.c"' /usr/src/nvidia-$driver/nvidia/os-interface.c
-fi
-if [ `grep "kern.ld" /usr/src/nvidia-$driver/nvidia/nvidia.Kbuild|wc -l` = 0 ];then
-  echo "ldflags-y += -T /root/vgpu_unlock/kern.ld" >> /usr/src/nvidia-$driver/nvidia/nvidia.Kbuild
-fi
-if [ `grep "vgpu_unlock" /lib/systemd/system/nvidia-vgpud.service|wc -l` = 0 ];then
-  sed -i 's#ExecStart=#ExecStart=/root/vgpu_unlock/vgpu_unlock #' /lib/systemd/system/nvidia-vgpud.service
-fi
-if [ `grep "vgpu_unlock" /lib/systemd/system/nvidia-vgpu-mgr.service|wc -l` = 0 ];then
-  sed -i 's#ExecStart=#ExecStart=/root/vgpu_unlock/vgpu_unlock #' /lib/systemd/system/nvidia-vgpu-mgr.service
-fi
-
-# reaload daemon
-systemctl daemon-reload
-
-# remove and reinstall driver
-echo "======================================================================="
-echo "$(tput setaf 2)reconfiguring driver... 正在重新构建驱动$(tput sgr 0)"
-echo "======================================================================="
-dkms remove  -m nvidia -v $driver --all
-dkms install -m nvidia -v $driver
-
-# install mdev
-echo "======================================================================="
-echo "$(tput setaf 2)installing mdev... 正在安装mdev设备$(tput sgr 0)"
-echo "======================================================================="
-cd /root
-if [ -x /usr/sbin/mdevctl ];then echo "$(tput setaf 2)√ mdev installed! 已安装mdev$(tput sgr 0)"
-else
-git clone https://github.com/mdevctl/mdevctl.git
-cd mdevctl
-make install
-fi
-
-# adding 11 uuid to env
-if [ `grep "AAA" /etc/environment|wc -l` = 0 ];then
+  # adding 11 uuid to env
+  if [ `grep "AAA" /etc/environment|wc -l` = 0 ];then
     cat <<EOF >> /etc/environment
 export AAA=1728f397-99e5-47a6-9e70-ac00d8031596
 export BBB=2d5d39f8-80f3-4925-b790-8f7a405b8cb5
@@ -228,28 +234,24 @@ export III=94df9f85-44b9-4f48-a81b-8a19f0d19191
 export JJJ=108d9d06-eb33-4fe0-8115-cc2d5f6f8589
 export KKK=11049ddb-b7ab-4a0c-9111-ab4529b39489
 EOF
-else echo "$(tput setaf 2)√ Done setup 11 UUID env! 已添加总共11个UUID环境变量$(tput sgr 0)"
-fi
+  else echo "$(tput setaf 2)√ Done setup 11 UUID env! 已添加总共11个UUID环境变量$(tput sgr 0)"
+  fi
 
-# adding vgpu command
-if [ `grep "vgpu" ~/.bashrc|wc -l` = 0 ];then
-  echo "alias vgpu='/root/vgpu_unlock/scripts/vgpu-name.sh -p ALL'" >> ~/.bashrc
-else echo "$(tput setaf 2)√ Done vgpu command! 已设置vgpu命令$(tput sgr 0)"
-fi
+  # adding vgpu command
+  if [ `grep "vgpu" ~/.bashrc|wc -l` = 0 ];then
+    echo "alias vgpu='/root/vgpu_unlock/scripts/vgpu-name.sh -p ALL'" >> ~/.bashrc
+  else echo "$(tput setaf 2)√ Done vgpu command! 已设置vgpu命令$(tput sgr 0)"
+  fi
 
-# adding unlock command
-if [ `grep "alias unlock" ~/.bashrc|wc -l` = 0 ];then
-  echo "alias unlock='/root/begin.sh'" >> ~/.bashrc
-else echo "$(tput setaf 2)√ Done unlock command! 已设置unlock命令$(tput sgr 0)"
-fi
-
-echo "======================================================================="
-echo "$(tput setaf 2)Done! Please reboot!"
-echo "after reboot, you can run <vgpu> to list all support vgpu"
-echo "搞定！请重启PVE！重启后可以运行vgpu查看所有支持的型号$(tput sgr 0)"
-echo "                                                                 by ksh"
-echo "======================================================================="
-tput sgr 0
+  echo "======================================================================="
+  echo "$(tput setaf 2)Done! Please reboot!"
+  echo "after reboot, you can run <vgpu> to list all support vgpu"
+  echo "you can also run <unlock> to rerun main script"
+  echo "搞定！请重启PVE！重启后可以运行vgpu查看所有支持的型号"
+  echo "运行unlock命令可重新启动该脚本$(tput sgr 0)"
+  echo "                                                                 by ksh"
+  echo "======================================================================="
+  tput sgr 0
 }
 
 startUnlock(){
@@ -309,15 +311,15 @@ startUnlock(){
 }
 
 installBeautify(){
-echo "======================================================================="
-echo "$(tput setaf 2)step 1 --> installing lsd + bat 正在安装美化程序...$(tput sgr 0)"
-echo "======================================================================="
-wget https://github.com/Peltoche/lsd/releases/download/0.20.1/lsd_0.20.1_amd64.deb
-wget https://github.com/sharkdp/bat/releases/download/v0.18.1/bat_0.18.1_amd64.deb
-dpkg -i lsd_0.20.1_amd64.deb && rm lsd_0.20.1_amd64.deb
-dpkg -i bat_0.18.1_amd64.deb && rm bat_0.18.1_amd64.deb
-if [ `grep "lsd" ~/.bashrc|wc -l` = 0 ];then
-cat <<EOF >> ~/.bashrc
+  echo "======================================================================="
+  echo "$(tput setaf 2)step 1 --> installing lsd + bat 正在安装美化程序...$(tput sgr 0)"
+  echo "======================================================================="
+  wget https://github.com/Peltoche/lsd/releases/download/0.20.1/lsd_0.20.1_amd64.deb
+  wget https://github.com/sharkdp/bat/releases/download/v0.18.1/bat_0.18.1_amd64.deb
+  dpkg -i lsd_0.20.1_amd64.deb && rm lsd_0.20.1_amd64.deb
+  dpkg -i bat_0.18.1_amd64.deb && rm bat_0.18.1_amd64.deb
+  if [ `grep "lsd" ~/.bashrc|wc -l` = 0 ];then
+  cat <<EOF >> ~/.bashrc
 alias ls='lsd'
 alias l='ls -l'
 alias ll='ls -l'
@@ -326,25 +328,25 @@ alias lla='ls -la'
 alias lt='ls --tree'
 alias cat='bat'
 EOF
-else echo "$(tput setaf 2)√ Done lsd installed! 已添加ls环境变量$(tput sgr 0)"
-fi
-
-echo "======================================================================="
-echo "$(tput setaf 2)step 2 --> installing bpytop 正在安装bpytop...$(tput sgr 0)"
-echo "======================================================================="
-for app in python3-pip
-do
-  if [ `dpkg -s $app|grep Status|wc -l` = 1 ]; then echo "$(tput setaf 2)√ 已安装$app$(tput sgr 0) Done installing $app"
-  else 
-    echo "$(tput setaf 1)× 未安装$app$(tput sgr 0)"
-    apt install -y $app
+  else echo "$(tput setaf 2)√ Done lsd installed! 已添加ls环境变量$(tput sgr 0)"
   fi
-done
-pip3 install bpytop --upgrade
 
-echo "======================================================================="
-echo "$(tput setaf 2)Done! 搞定！食用方式：bpytop，ls，ll，la，l，cat$(tput sgr 0)"
-echo "======================================================================="
+  echo "======================================================================="
+  echo "$(tput setaf 2)step 2 --> installing bpytop 正在安装bpytop...$(tput sgr 0)"
+  echo "======================================================================="
+  for app in python3-pip
+  do
+    if [ `dpkg -s $app|grep Status|wc -l` = 1 ]; then echo "$(tput setaf 2)√ 已安装$app$(tput sgr 0) Done installing $app"
+    else 
+      echo "$(tput setaf 1)× 未安装$app$(tput sgr 0)"
+      apt install -y $app
+    fi
+  done
+  pip3 install bpytop --upgrade
+
+  echo "======================================================================="
+  echo "$(tput setaf 2)Done! 搞定！食用方式：bpytop，ls，ll，la，l，cat$(tput sgr 0)"
+  echo "======================================================================="
 }
 
 startBeautify(){
@@ -455,7 +457,7 @@ chVram(){
       mdevctl stop -u $JJJ
       mdevctl stop -u $KKK
       OUTPUT=$(mdevctl list)
-      echo "${OUTPUT}Released mdev devices 重新释放所有mdev设备"
+      echo "Released mdev devices 重新释放所有mdev设备"
     }
 
     killvgpu
@@ -471,18 +473,6 @@ chVram(){
     mdevctl start -u $III -p 0000:$PCI --type $vxQ
     mdevctl start -u $JJJ -p 0000:$PCI --type $vxQ
     mdevctl start -u $KKK -p 0000:$PCI --type $vxQ
-
-    mdevctl define --auto --uuid $AAA
-    mdevctl define --auto --uuid $BBB
-    mdevctl define --auto --uuid $CCC
-    mdevctl define --auto --uuid $DDD
-    mdevctl define --auto --uuid $EEE
-    mdevctl define --auto --uuid $FFF
-    mdevctl define --auto --uuid $GGG
-    mdevctl define --auto --uuid $HHH
-    mdevctl define --auto --uuid $III
-    mdevctl define --auto --uuid $JJJ
-    mdevctl define --auto --uuid $KKK
 
     echo "
     [Unit]
@@ -622,9 +612,285 @@ chVram(){
   fi
 }
 
+deployQuadro(){
+
+  runQuadro(){
+    IDofTU="1EB1" #RTX4000
+    SubIDofTU="12A0"
+
+    IDofGP="1BB0" #P5000
+    SubIDofGP="11B2"
+
+    IDofGM="13F0" #M5000
+    SubIDofGM="1152"
+
+    # delete any vgpu uuid conf if exist
+    sed -i '/args: -uuid/d' /etc/pve/qemu-server/$vmid.conf
+
+    # modify vm conf depends on gpu architecture
+    if [ `grep -E "$AAA|$BBB|$CCC|$DDD|$EEE|$FFF|$GGG|$HHH|$III|$JJJ|$KKK" /etc/pve/qemu-server/$vmid.conf|wc -l` = 0 ]; then
+      # if GP pascal
+      if [ `lspci | grep GP | wc -l` = 1 ]; then
+        if [ $uuidnumb = 1 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$AAA,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $AAA" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 2 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$BBB,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $BBB" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 3 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$CCC,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $CCC" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 4 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$DDD,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $DDD" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 5 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$EEE,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $EEE" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 6 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$FFF,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $FFF" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 7 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$GGG,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $GGG" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 8 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$HHH,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $HHH" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 9 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$III,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $III" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 10 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$JJJ,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $JJJ" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 11 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$KKK,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $KKK" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+      
+      fi
+
+      # if TU turling  
+      if [ `lspci | grep TU | wc -l` = 1 ]; then
+
+        sed -i '/mdev/d' /etc/pve/qemu-server/$vmid.conf
+        sed -i '/-uuid/d' /etc/pve/qemu-server/$vmid.conf
+
+        if [ $uuidnumb = 1 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$AAA,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $AAA" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 2 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$BBB,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $BBB" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 3 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$CCC,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $CCC" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 4 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$DDD,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $DDD" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 5 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$EEE,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $EEE" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 6 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$FFF,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $FFF" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 7 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$GGG,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $GGG" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 8 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$HHH,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $HHH" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 9 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$III,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $III" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 10 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$JJJ,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $JJJ" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 11 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$KKK,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $KKK" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+      
+      fi
+
+      # if GM maxwell
+      if [ `lspci | grep GM | wc -l` = 1 ]; then
+        if [ $uuidnumb = 1 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$AAA,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $AAA" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 2 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$BBB,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $BBB" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 3 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$CCC,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $CCC" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 4 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$DDD,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $DDD" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 5 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$EEE,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $EEE" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 6 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$FFF,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $FFF" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 7 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$GGG,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $GGG" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 8 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$HHH,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $HHH" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 9 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$III,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $III" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 10 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$JJJ,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $JJJ" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+        if [ $uuidnumb = 11 ]; then
+        sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$KKK,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $KKK" /etc/pve/qemu-server/$vmid.conf
+        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        fi
+
+
+      fi
+
+      # otherwise
+      else
+      echo "$(tput setaf 1)Already modified! Please check VM conf: $vmid $(tput setaf 0)"
+      echo "$(tput setaf 1)虚拟机ID$vmid已存在Quadro显卡，已跳过！ $(tput setaf 0)"
+    fi
+  }
+
+  if [ $L = "cn" ];then # CN
+    if (whiptail --title "同意条款及注意事项" --yes-button "同意" --no-button "返回"  --yesno "
+    自动检测主板当前的物理显卡
+    并直通为相对应架构的专业卡
+
+    - 如为9系，则自动解锁为M5000专业显卡
+    - 如为10系，则自动解锁为P5000专业显卡
+    - 如为20系，则自动解锁为RTX4000专业显卡
+
+    请注意：该脚本不支持6,7,8系和30系物理显卡" 15 80) then
+    typeuuid(){ # typing uuid
+      uuidnumb=$(whiptail --inputbox "请输入UUID，默认是1，可选范围1-11" 8 60 1 --title "定义UUID值" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ $exitstatus = 0 ]; then
+          if [ "$uuidnumb" -le 11 -a "$vmid" -ge 1 ]; then runQuadro
+          else 
+          whiptail --title "Warnning" --msgbox "Invalid UUID. Choose between 1-11! 请重新输入1-11范围内的数字！" 10 60
+          typeuuid
+          fi
+      fi
+    }
+
+    vmid=$(whiptail --inputbox "请输入你希望添加vGPU的虚拟机ID值，默认是101" 8 60 101 --title "输入VM的ID值" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+        if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then typeuuid
+        else 
+        whiptail --title "Warnning" --msgbox "请重新输入100-999范围内的数字！" 10 60
+        deployQuadro
+        fi
+    fi
+  else main
+  fi
+
+  else # EN
+    if (whiptail --title "Notice" --yes-button "I Agree" --no-button "Go Back"  --yesno "
+    Script auto detect graphics card on motherboard
+    Then passthrough with appropriate Quadro
+
+    - 9 series unlock to a M4000 Quadro
+    - 10 series unlock to a P5000 Quadro
+    - 20 series unlock to a RTX4000 Quadro
+
+    Please be aware, 6,7,8 and 30 series are not supported" 15 80) then
+    typeuuid(){ # typing uuid
+        uuidnumb=$(whiptail --inputbox "Typing UUID, 1-11 available. Default is 1" 8 60 1 --title "Define UUID" 3>&1 1>&2 2>&3)
+        exitstatus=$?
+        if [ $exitstatus = 0 ]; then
+            if [ "$uuidnumb" -le 11 -a "$vmid" -ge 1 ]; then runQuadro
+            else 
+            whiptail --title "Warnning" --msgbox "Invalid UUID. Choose between 1-11!" 10 60
+            typeuuid
+            fi
+        fi
+    }
+    
+    vmid=$(whiptail --inputbox "What's the VM id you want to add a Quadro? default is 101" 8 60 101 --title "define VM ID" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+        if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then typeuuid
+        else 
+        whiptail --title "Warnning" --msgbox "Invalid VM ID. Choose between 100-999!" 10 60
+        fi
+    fi
+    else main
+    fi
+  fi
+}
+
 deployvGPU(){
   PCI="$(lspci | grep -i nvidia | grep -i vga | awk '{print $1}')"
-  vGPUtype="$(mdevctl list -d | grep -m1 nvidia | awk '{print $3}')" # defined mdev
 
   vGPUassign(){
 
@@ -633,26 +899,58 @@ deployvGPU(){
     sed -i '/mdev/d' /etc/pve/qemu-server/$vmid.conf
     sed -i '/args: -uuid/d' /etc/pve/qemu-server/$vmid.conf
 
+    # # for vGPU wip
+    # vmlist=($(qm list | sed '1d' | awk '{print $1}'))
+    # # array=($(sed -E 's/([[:alnum:]]+)/"&"/g;s/ /,/g' <<< ${vmlist[@]}))
+    # array=($(sed -E 's/([[:alnum:]]+)/"&"/g' <<< ${vmlist[@]}))
+    # vmid=$(whiptail --title "choose VM" --checklist "Select VM" 22 80 14 "${array[@]}")
+    # cat *.conf | grep -i args | awk '{print $3}'
+
+    # config mdev vgpu with license
+    # qm list|sed '1d'|awk '{print $1}'|while read line ; do mdevctl stop -u 00000000-0000-0000-0000-000000000$line; done
+    # qm list|sed '1d'|awk '{print $1}'|while read line ; do mdevctl start -u 00000000-0000-0000-0000-000000000$line -p 0000:$PCI --type $vxQ; done
+
+    # stop current mdev
+    qm list|sed '1d'|awk '{print $1}'|while read line ; 
+    do 
+      if [ `grep -E "mdev=" /etc/pve/qemu-server/*.conf|wc -l` = 1 ];then
+        mdevctl stop -u 00000000-0000-0000-0000-000000000$line
+      fi;
+    done
+
     # adding mdev
-    sed -i -r "1i hostpci0: $PCI,mdev=$vGPUtype" /etc/pve/qemu-server/$vmid.conf
+    # sed -i -r "1i hostpci0: $PCI,mdev=$vGPUtype" /etc/pve/qemu-server/$vmid.conf
 
     # adding uuid to conf
     sed -i -r "1i args: -uuid 00000000-0000-0000-0000-000000000$vmid" /etc/pve/qemu-server/$vmid.conf
 
-    echo "$(tput setaf 2)vGPU assigned! 已添加vGPU！$(tput setaf 0)"
-    echo "$(tput setaf 2)vGPU: $($vgpuScriptPath -p ALL | grep -w "$(mdevctl list -d | grep -m1 nvidia | awk '{print $3}')") $(tput setaf 0)"
-
+    echo "$(tput setaf 2)vGPU assigned! Go to PVE webGui->Hardward->add PCI device->choose your desire vGPU type$(tput setaf 0)"
+    echo "$(tput setaf 2)设置完毕！请到网页端->硬件->PCI device->添加你希望的类型$(tput setaf 0)"
   }
 
-  runUserInput(){
-    vmid=$(whiptail --inputbox "请输入你希望添加vGPU的虚拟机ID值，默认是101" 8 60 101 --title "输入VM的ID值" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus = 0 ]; then
-      if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then vGPUassign
-      else 
-      whiptail --title "Warnning" --msgbox "请重新输入100-999范围内的数字！" 10 60
-      deployvGPU
+  vmidinput(){
+    if [ $L = "cn" ];then # CN
+      vmid=$(whiptail --inputbox "请输入你希望添加vGPU的虚拟机ID值，默认是101" 8 60 101 --title "输入VM的ID值" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ $exitstatus = 0 ]; then
+        if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then vGPUassign
+        else 
+        whiptail --title "Warnning" --msgbox "请重新输入100-999范围内的数字！" 10 80
+        deployvGPU
+        fi
       fi
+
+    else # EN
+      vmid=$(whiptail --inputbox "What's the VM id you want to add a vGPU? default is 101" 8 60 101 --title "define VM ID" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ $exitstatus = 0 ]; then
+          if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then vGPUassign
+          else 
+          whiptail --title "Warnning" --msgbox "Invalid VM ID. Choose between 100-999!" 10 60
+          fi
+      else main
+      fi
+
     fi
   }
 
@@ -663,14 +961,17 @@ deployvGPU(){
     此脚本核心代码均来自网络，up主仅搬运流程并自动化，固版权归属原作者
     部署及使用者需自行承担相关操作风险及后果，up主不对操作承担任何相关责任
     ----------------------------------------------------------------------
-
-    脚本自动将已切分好的vGPU添加到指定VM，从而获得高性能硬件加速
+    脚本自动添加vGPU到指定VM，从而获得高性能硬件加速
+    Quadro与vGPU最大的区别：
+    1. 解锁成Quadro免费，解锁成vGPU需要授权服务器和购买许可
+    2. Quadro没有CUDA，vGPU有CUDA
+    3. Quadro的OpenGL性能略微强过vGPU
 
     此脚本仅自动化vGPU直通，绿色环保无痛部署:P
     up主本人不提供任何相关授权信息及购买渠道
     一切关于部署授权费用等信息，请咨询专业机构购买正版许可
     或自行注册申请90天试用授权
-    " 20 80) then runUserInput
+    " 20 80) then vmidinput
     else main
     fi
 
@@ -683,7 +984,7 @@ deployvGPU(){
     Please do not use for commercial or any production environment.
     Credits to vgpu_unlock github that make this happen.
     ----------------------------------------------------------------
-    Auto assigning 'sliced' vGPU to VM
+    Auto assigning vGPU to VM
 
     This script will only automate the assigning process.
     I will not provide any license info for this script.
@@ -691,7 +992,7 @@ deployvGPU(){
     Or you could sign up a 90 day trials on nvidia website.
     GL & HF to you guys :)
 
-    " 20 80) then runUserInput
+    " 20 80) then vmidinput
     else main
     fi
 
@@ -767,19 +1068,11 @@ resetDefaultvGPU(){
     mdevctl stop -u $JJJ
     mdevctl stop -u $KKK
 
-    mdevctl undefine -u $AAA
-    mdevctl undefine -u $BBB
-    mdevctl undefine -u $CCC
-    mdevctl undefine -u $DDD
-    mdevctl undefine -u $EEE
-    mdevctl undefine -u $FFF
-    mdevctl undefine -u $GGG
-    mdevctl undefine -u $HHH
-    mdevctl undefine -u $III
-    mdevctl undefine -u $JJJ
-    mdevctl undefine -u $KKK
+    if [ ! `grep -E "mdev=" /etc/pve/qemu-server/*.conf|wc -l` = 0 ];then
+      qm list|sed '1d'|awk '{print $1}'|while read line ; do mdevctl stop -u 00000000-0000-0000-0000-000000000$line; done
+    fi
 
-    echo "$(tput setaf 2)Done! 初始化完成！$(tput setaf 0)"
+    echo "$(tput setaf 2)Done reset! All vGPU resources released! 初始化完成，所有vGPU资源均已释放完毕！$(tput setaf 0)"
   }
 
   if [ $L = "cn" ];then # CN
@@ -788,12 +1081,10 @@ resetDefaultvGPU(){
     或者你希望重新设置切分，此脚本将恢复到最初状态
 
     1）释放所有mdev设备
-    2）取消定义所有mdev设备
-    3）删除所有跟vGPU相关的自启动服务
-    4）删除所有虚拟机conf跟vGPU相关的设置
-    5）所有虚拟机将恢复成无显卡直通的初始化状态
+    2）删除所有跟vGPU相关的自启动服务
+    3）删除所有虚拟机conf跟vGPU相关的设置
+    4）所有虚拟机将恢复成无显卡直通的初始化状态
 
-    如需重新切分，请再次运行步骤（d）重新切分
     " 20 80) then runReset
     else main
     fi
@@ -803,12 +1094,10 @@ resetDefaultvGPU(){
     Script doesn't require reboot after reset process
 
     1) Release all mdev devices to default
-    2) Undefine all mdev devices
-    3) Delete all startup services
-    4) Delete all vGPU related settings for all VM's conf
-    5) All VM will reset to no-vGPU mode
+    2) Delete all startup services
+    3) Delete all vGPU related settings for all VM's conf
+    4) All VM will reset to no-vGPU mode
 
-    Re-run step(d) to re-slice the vGPU, then choose (e) or (f) step
     " 20 80) then runReset
     else main
     fi
@@ -889,9 +1178,10 @@ main(){
   "a" "更新系统" \
   "b" "解锁vGPU" \
   "c" "美化系统" \
-  "d" "切分（重切分）显存" \
-  "e" "部署vGPU到VM" \
-  "f" "部署授权服务器 (仅用于授权vGPU)" \
+  "d" "Quadro切分（重切分）显存" \
+  "e" "Quadro添加到VM" \
+  "f" "vGPU添加到VM (需正版授权)" \
+  "g" "vGPU授权服务器部署" \
   "s" "查看当前状态" \
   "r" "初始化vGPU状态" \
   "t" "实时硬件状态" \
@@ -904,9 +1194,10 @@ main(){
   "a" "Update PVE" \
   "b" "Unlock vGPU" \
   "c" "Beautify PVE" \
-  "d" "Change VRAM Size" \
-  "e" "Deploy vGPU to VM" \
-  "f" "Setup Licese Server (only for vGPU license)" \
+  "d" "Change Quadro VRAM Size" \
+  "e" "Deploy Quadro to VM" \
+  "f" "Deploy vGPU to VM (licServer required)" \
+  "g" "Setup vGPU Licese Server" \
   "s" "Current GPU Status" \
   "r" "Reset all vGPU to default" \
   "t" "Real time Hardware status" \
@@ -919,8 +1210,9 @@ main(){
   b ) startUnlock;;
   c ) startBeautify;;
   d ) chVram;;
-  e ) deployvGPU;;
-  f ) setupLXC;;
+  e ) deployQuadro;;
+  f ) deployvGPU;;
+  g ) setupLXC;;
   s ) checkStatus;;
   r ) resetDefaultvGPU;;
   t ) realtimeHW;;
