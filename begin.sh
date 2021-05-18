@@ -38,63 +38,62 @@ KKK="11049ddb-b7ab-4a0c-9111-ab4529b39489"
 
 vgpuScriptPath="/root/vgpu_unlock/scripts/vgpu-name.sh"
 
-runUpdate(){
-  # enable iommu group
-  if [ `grep "iommu" /etc/default/grub | wc -l` = 0 ];then
-    if [ `cat /proc/cpuinfo|grep Intel|wc -l` = 0 ];then 
-      sed -i 's#quiet#quiet amd_iommu=on iommu=pt#' /etc/default/grub && update-grub
-    else
-      sed -i 's#quiet#quiet intel_iommu=on iommu=pt#' /etc/default/grub && update-grub
-    fi
-  else echo "$(tput setaf 2)iommu satisfied 已开启IOMMU √$(tput sgr 0)"
-  fi
-
-  # add vfio modules
-  if [ `grep "vfio" /etc/modules|wc -l` = 0 ];then
-    echo -e "vfio\nvfio_iommu_type1\nvfio_pci\nvfio_virqfd" >> /etc/modules
-    else echo "$(tput setaf 2)vfio satisfied 已添加VFIO模组 √$(tput sgr 0)"
-  fi
-
-  # blacklist nouveau
-  if [ `grep "nouveau" /etc/modprobe.d/blacklist.conf|wc -l` = 0 ];then
-    echo "blacklist nouveau" >> /etc/modprobe.d/blacklist.conf && update-initramfs -u
-    else echo "$(tput setaf 2)nouveau satisfied 已屏蔽nouveau驱动 √$(tput sgr 0)"
-  fi
-
-  # laptop lid close
-  if [ `grep "HandleLidSwitch=ignore" /etc/systemd/logind.conf|wc -l` = 0 ];then
-    echo "HandleLidSwitch=ignore" >> /etc/systemd/logind.conf
-  # else echo "$(tput setaf 2)lid satisfied 已设置笔记本屏幕 √$(tput sgr 0)"
-  fi
-
-  # remove enterprise repo
-  if test -f "/etc/apt/sources.list.d/pve-enterprise.list";then 
-    rm /etc/apt/sources.list.d/pve-enterprise.list
-  fi
-
-  # add none-enterprise repo
-  if [ `grep "pve-no-subscription" /etc/apt/sources.list|wc -l` = 0 ];then
-    echo "deb http://download.proxmox.com/debian/pve buster pve-no-subscription" >> /etc/apt/sources.list
-  else echo "$(tput setaf 2)repo satisfied 已设置源 √$(tput sgr 0)"
-  fi
-
-  # update
-  apt update && apt upgrade -y && apt dist-upgrade -y
-
-  # adding unlock command
-  if [ `grep "alias unlock" ~/.bashrc|wc -l` = 0 ];then
-    echo "alias unlock='/root/begin.sh'" >> ~/.bashrc
-  else echo "$(tput setaf 2)√ Done unlock command! 已设置unlock命令$(tput sgr 0)"
-  fi
-
-  echo "======================================================================="
-  echo "$(tput setaf 2)Done PVE updated ! --> please reboot 搞定！请重启PVE$(tput sgr 0)"
-  echo "======================================================================="
-  tput sgr 0
-}
-
 startUpdate(){
-  if [ $L = "cn" ];then
+  runUpdate(){
+    # enable iommu group
+    if [ `grep "iommu" /etc/default/grub | wc -l` = 0 ];then
+      if [ `cat /proc/cpuinfo|grep Intel|wc -l` = 0 ];then 
+        sed -i 's#quiet#quiet amd_iommu=on iommu=pt#' /etc/default/grub && update-grub
+      else
+        sed -i 's#quiet#quiet intel_iommu=on iommu=pt#' /etc/default/grub && update-grub
+      fi
+    else echo "$(tput setaf 2)iommu satisfied 已开启IOMMU √$(tput sgr 0)"
+    fi
+
+    # add vfio modules
+    if [ `grep "vfio" /etc/modules|wc -l` = 0 ];then
+      echo -e "vfio\nvfio_iommu_type1\nvfio_pci\nvfio_virqfd" >> /etc/modules
+      else echo "$(tput setaf 2)vfio satisfied 已添加VFIO模组 √$(tput sgr 0)"
+    fi
+
+    # blacklist nouveau
+    if [ `grep "nouveau" /etc/modprobe.d/blacklist.conf|wc -l` = 0 ];then
+      echo "blacklist nouveau" >> /etc/modprobe.d/blacklist.conf && update-initramfs -u
+      else echo "$(tput setaf 2)nouveau satisfied 已屏蔽nouveau驱动 √$(tput sgr 0)"
+    fi
+
+    # laptop lid close
+    if [ `grep "HandleLidSwitch=ignore" /etc/systemd/logind.conf|wc -l` = 0 ];then
+      echo "HandleLidSwitch=ignore" >> /etc/systemd/logind.conf
+    # else echo "$(tput setaf 2)lid satisfied 已设置笔记本屏幕 √$(tput sgr 0)"
+    fi
+
+    # remove enterprise repo
+    if test -f "/etc/apt/sources.list.d/pve-enterprise.list";then 
+      rm /etc/apt/sources.list.d/pve-enterprise.list
+    fi
+
+    # add none-enterprise repo
+    if [ `grep "pve-no-subscription" /etc/apt/sources.list|wc -l` = 0 ];then
+      echo "deb http://download.proxmox.com/debian/pve buster pve-no-subscription" >> /etc/apt/sources.list
+    else echo "$(tput setaf 2)repo satisfied 已设置源 √$(tput sgr 0)"
+    fi
+
+    # update
+    apt update && apt upgrade -y && apt dist-upgrade -y
+
+    # adding unlock command
+    if [ `grep "alias unlock" ~/.bashrc|wc -l` = 0 ];then
+      echo "alias unlock='/root/begin.sh'" >> ~/.bashrc
+    else echo "$(tput setaf 2)√ Done unlock command! 已设置unlock命令$(tput sgr 0)"
+    fi
+
+    echo "======================================================================="
+    echo "$(tput setaf 2)Done PVE updated ! --> please reboot 搞定！请重启PVE$(tput sgr 0)"
+    echo "======================================================================="
+    tput sgr 0
+  }
+  if [ $L = "cn" ];then # CN
     if (whiptail --title "同意条款及注意事项" --yes-button "继续" --no-button "返回"  --yesno "
     ----------------------------------------------------------------------
     此脚本涉及的命令行操作具备一定程度的硬件损坏风险，固仅供测试
@@ -112,7 +111,7 @@ startUpdate(){
     else
         main
     fi
-  else
+  else # EN
     if (whiptail --title "Agreement" --yes-button "Continue" --no-button "Go Back"  --yesno "
     ----------------------------------------------------------------
     Script may possible damaging your harware, use at your own risk.
@@ -222,17 +221,17 @@ runUnlock(){
   # adding 11 uuid to env
   if [ `grep "AAA" /etc/environment|wc -l` = 0 ];then
     cat <<EOF >> /etc/environment
-export AAA=1728f397-99e5-47a6-9e70-ac00d8031596
-export BBB=2d5d39f8-80f3-4925-b790-8f7a405b8cb5
-export CCC=3b305d4e-88f7-4bea-b2e5-dd436142dc60
-export DDD=44da7489-1b80-4e12-93e7-ae2b2b49876f
-export EEE=5e694858-12ed-4c55-b57a-c4e889bee0b2
-export FFF=6b749fe2-5835-46b5-aff2-19c79b60ddcc
-export GGG=7fcb38e2-41c2-4807-80f1-3b79d501f1b5
-export HHH=8f601d2d-431a-421c-9f51-49280cfddd8f
-export III=94df9f85-44b9-4f48-a81b-8a19f0d19191
-export JJJ=108d9d06-eb33-4fe0-8115-cc2d5f6f8589
-export KKK=11049ddb-b7ab-4a0c-9111-ab4529b39489
+export AAA=$AAA
+export BBB=$BBB
+export CCC=$CCC
+export DDD=$DDD
+export EEE=$EEE
+export FFF=$FFF
+export GGG=$GGG
+export HHH=$HHH
+export III=$III
+export JJJ=$JJJ
+export KKK=$KKK
 EOF
   else echo "$(tput setaf 2)√ Done setup 11 UUID env! 已添加总共11个UUID环境变量$(tput sgr 0)"
   fi
@@ -310,7 +309,8 @@ startUnlock(){
   tput sgr 0
 }
 
-installBeautify(){
+startBeautify(){
+  installBeautify(){
   echo "======================================================================="
   echo "$(tput setaf 2)step 1 --> installing lsd + bat 正在安装美化程序...$(tput sgr 0)"
   echo "======================================================================="
@@ -345,12 +345,10 @@ EOF
   pip3 install bpytop --upgrade
 
   echo "======================================================================="
-  echo "$(tput setaf 2)Done! 搞定！食用方式：bpytop，ls，ll，la，l，cat$(tput sgr 0)"
+  echo "$(tput setaf 2)Done! Please restart SSH! 搞定！请重启SSH，食用方式：bpytop，ls，ll，la，l，cat$(tput sgr 0)"
   echo "======================================================================="
-}
-
-startBeautify(){
-if [ $L = "cn" ];then
+  }
+  if [ $L = "cn" ];then
   if (whiptail --title "同意条款及注意事项" --yes-button "继续" --no-button "返回"  --yesno "
   ----------------------------------------------------------------------
   适用于PVE下美化基础LS，CAT，TOP命令，如添加带颜色文件夹图标等
@@ -376,7 +374,7 @@ if [ $L = "cn" ];then
   " 20 75) then installBeautify
   else main
   fi
-fi
+  fi
 }
 
 checkStatus(){
@@ -1019,7 +1017,7 @@ setupLXC(){
       默认访问网址：http://192.168.1.6:8080/licserver/
       默认终端登陆用户：root 密码：abc12345
 
-      注意事项：
+      运行后注意事项：
       1）请在PVE网页端修改IP地址为你局域网的网段
       2）运行登陆后务必输入passwd修改默认密码
       3）第一次启动速度较慢，请耐心等待CPU占用接近0时再访问网址
@@ -1162,6 +1160,11 @@ realtimeHW(){
 
 }
 
+checkNVlog(){
+  whiptail --title "LOG" --scrolltext --msgbox "$(journalctl -r | grep -i nvidia)" 30 150
+  main
+}
+
 # --------------------------------------------------------- end function --------------------------------------------------------- #
 
 main(){
@@ -1178,13 +1181,14 @@ main(){
   "a" "更新系统" \
   "b" "解锁vGPU" \
   "c" "美化系统" \
-  "d" "Quadro切分（重切分）显存" \
-  "e" "Quadro添加到VM" \
-  "f" "vGPU添加到VM (需正版授权)" \
-  "g" "vGPU授权服务器部署" \
+  "d" "Quadro 切分(重切分)显存" \
+  "e" "Quadro 添加到VM" \
+  "f" "vGPU 添加到VM (需正版授权)" \
+  "g" "vGPU 授权服务器部署" \
   "s" "查看当前状态" \
   "r" "初始化vGPU状态" \
   "t" "实时硬件状态" \
+  "v" "查看日志" \
   "q" "退出程序" \
   3>&1 1>&2 2>&3)
   else
@@ -1201,6 +1205,7 @@ main(){
   "s" "Current GPU Status" \
   "r" "Reset all vGPU to default" \
   "t" "Real time Hardware status" \
+  "v" "Check log" \
   "q" "Quit" \
   3>&1 1>&2 2>&3)
   fi
@@ -1216,6 +1221,7 @@ main(){
   s ) checkStatus;;
   r ) resetDefaultvGPU;;
   t ) realtimeHW;;
+  v ) checkNVlog;;
   q ) tput sgr 0
       exit;;
   esac
