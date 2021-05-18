@@ -44,8 +44,10 @@ startUpdate(){
     if [ `grep "iommu" /etc/default/grub | wc -l` = 0 ];then
       if [ `cat /proc/cpuinfo|grep Intel|wc -l` = 0 ];then 
         sed -i 's#quiet#quiet amd_iommu=on iommu=pt#' /etc/default/grub && update-grub
+        echo "$(tput setaf 2)AMD iommu satisfied 已开启AMD IOMMU √$(tput sgr 0)"
       else
         sed -i 's#quiet#quiet intel_iommu=on iommu=pt#' /etc/default/grub && update-grub
+        echo "$(tput setaf 2)Intel iommu satisfied 已开启Intel IOMMU √$(tput sgr 0)"
       fi
     else echo "$(tput setaf 2)iommu satisfied 已开启IOMMU √$(tput sgr 0)"
     fi
@@ -53,12 +55,14 @@ startUpdate(){
     # add vfio modules
     if [ `grep "vfio" /etc/modules|wc -l` = 0 ];then
       echo -e "vfio\nvfio_iommu_type1\nvfio_pci\nvfio_virqfd" >> /etc/modules
+      echo "$(tput setaf 2)vfio satisfied 已添加VFIO模组 √$(tput sgr 0)"
       else echo "$(tput setaf 2)vfio satisfied 已添加VFIO模组 √$(tput sgr 0)"
     fi
 
     # blacklist nouveau
     if [ `grep "nouveau" /etc/modprobe.d/blacklist.conf|wc -l` = 0 ];then
       echo "blacklist nouveau" >> /etc/modprobe.d/blacklist.conf && update-initramfs -u
+      echo "$(tput setaf 2)vfio satisfied 已添加VFIO模组 √$(tput sgr 0)"
       else echo "$(tput setaf 2)nouveau satisfied 已屏蔽nouveau驱动 √$(tput sgr 0)"
     fi
 
@@ -76,6 +80,7 @@ startUpdate(){
     # add none-enterprise repo
     if [ `grep "pve-no-subscription" /etc/apt/sources.list|wc -l` = 0 ];then
       echo "deb http://download.proxmox.com/debian/pve buster pve-no-subscription" >> /etc/apt/sources.list
+      echo "$(tput setaf 2)repo satisfied 已设置源 √$(tput sgr 0)"
     else echo "$(tput setaf 2)repo satisfied 已设置源 √$(tput sgr 0)"
     fi
 
@@ -85,11 +90,14 @@ startUpdate(){
     # adding unlock command
     if [ `grep "alias unlock" ~/.bashrc|wc -l` = 0 ];then
       echo "alias unlock='/root/begin.sh'" >> ~/.bashrc
+      echo "$(tput setaf 2)√ Done unlock command! 已设置unlock命令$(tput sgr 0)"
     else echo "$(tput setaf 2)√ Done unlock command! 已设置unlock命令$(tput sgr 0)"
     fi
 
     echo "======================================================================="
-    echo "$(tput setaf 2)Done PVE updated ! --> please reboot 搞定！请重启PVE$(tput sgr 0)"
+    echo "$(tput setaf 2)Done PVE updated ! --> please reboot 搞定！请重启PVE."
+    echo "After reboot, you can run <unlock> to bring back this script."
+    echo "重启后运行unlock命令可启动该脚本$(tput sgr 0)"
     echo "======================================================================="
     tput sgr 0
   }
@@ -133,90 +141,94 @@ startUpdate(){
   tput sgr 0
 }
 
-runUnlock(){
-  cd /root/
-  # driver="440.87"
-  driver="450.80"
-  # driver="460.32.04"
+startUnlock(){
+  runUnlock(){
+    cd /root/
+    # driver="440.87"
+    driver="450.80"
+    # driver="460.32.04"
 
-  # install apps
-  echo "======================================================================="
-  echo "$(tput setaf 2)installing apps... 正在安装必要软件$(tput sgr 0)"
-  echo "======================================================================="
-  for app in build-essential dkms pve-headers git python3-pip jq
-  do
-    if [ `dpkg -s $app|grep Status|wc -l` = 1 ]; then echo "$(tput setaf 2)√ Already installed $app! 已安装$app$(tput sgr 0)"
+    # install apps
+    echo "======================================================================="
+    echo "$(tput setaf 2)installing apps... 正在安装必要软件$(tput sgr 0)"
+    echo "======================================================================="
+    for app in build-essential dkms pve-headers git python3-pip jq
+    do
+      if [ `dpkg -s $app|grep Status|wc -l` = 1 ]; then echo "$(tput setaf 2)√ Already installed $app! 已安装$app$(tput sgr 0)"
+      else 
+        echo "$(tput setaf 1)× You don't have $app install! 未安装$app$(tput sgr 0)"
+        echo "$(tput setaf 2)installing $app! 正在安装$app$(tput sgr 0)"
+        apt install -y $app
+        echo "$(tput setaf 2)√ Done $app installed! 已安装$app$(tput sgr 0)"
+      fi
+    done
+
+    if [ `pip3 install frida|wc -l` = 2 ]; then echo "$(tput setaf 2)√ Already installed $app! 已安装frida$(tput sgr 0)"
     else 
-      echo "$(tput setaf 1)× You don't have $app install! 未安装$app$(tput sgr 0)"
-      apt install -y $app
-      echo "$(tput setaf 2)√ Done $app installed! 已安装$app$(tput sgr 0)"
+    pip3 install frida
+    echo "$(tput setaf 2)installing $app! 正在安装$app$(tput sgr 0)"
     fi
-  done
 
-  if [ `pip3 install frida|wc -l` = 2 ]; then echo "$(tput setaf 2)√ Already installed $app! 已安装frida$(tput sgr 0)"
-  else pip3 install frida
-  fi
+    # Install driver
+    echo "======================================================================="
+    echo "$(tput setaf 2)installing Nvidia $driver Driver... 正在安装原版$driver显卡驱动程序$(tput sgr 0)"
+    echo "======================================================================="
+    cd /root/
+    if test -f "NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run";then 
+      chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
+      else
+      wget https://github.com/kevinshane/unlock/raw/master/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
+    fi
 
-  # Install driver
-  echo "======================================================================="
-  echo "$(tput setaf 2)installing Nvidia $driver Driver... 正在安装原版$driver显卡驱动程序$(tput sgr 0)"
-  echo "======================================================================="
-  cd /root/
-  if test -f "NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run";then 
-    chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
-    /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
+    # install vgpu_unlock
+    echo "======================================================================="
+    echo "$(tput setaf 2)unlocking... 正在解锁$(tput sgr 0)"
+    echo "======================================================================="
+    # vgpu_unlock
+    cd /root
+    if [ ! -d "/root/vgpu_unlock" ];then 
+      git clone https://github.com/DualCoder/vgpu_unlock.git && chmod -R +x /root/vgpu_unlock/
+    else echo "$(tput setaf 2)√ Done cloned unlock! 已下载unlock$(tput sgr 0)"
+    fi
+
+    # modify driver
+    if [ `grep "vgpu_unlock_hooks.c" /usr/src/nvidia-$driver/nvidia/os-interface.c|wc -l` = 0 ];then
+      sed -i '20a#include "/root/vgpu_unlock/vgpu_unlock_hooks.c"' /usr/src/nvidia-$driver/nvidia/os-interface.c
+    fi
+    if [ `grep "kern.ld" /usr/src/nvidia-$driver/nvidia/nvidia.Kbuild|wc -l` = 0 ];then
+      echo "ldflags-y += -T /root/vgpu_unlock/kern.ld" >> /usr/src/nvidia-$driver/nvidia/nvidia.Kbuild
+    fi
+    if [ `grep "vgpu_unlock" /lib/systemd/system/nvidia-vgpud.service|wc -l` = 0 ];then
+      sed -i 's#ExecStart=#ExecStart=/root/vgpu_unlock/vgpu_unlock #' /lib/systemd/system/nvidia-vgpud.service
+    fi
+    if [ `grep "vgpu_unlock" /lib/systemd/system/nvidia-vgpu-mgr.service|wc -l` = 0 ];then
+      sed -i 's#ExecStart=#ExecStart=/root/vgpu_unlock/vgpu_unlock #' /lib/systemd/system/nvidia-vgpu-mgr.service
+    fi
+
+    # reaload daemon
+    systemctl daemon-reload
+
+    # remove and reinstall driver
+    echo "======================================================================="
+    echo "$(tput setaf 2)reconfiguring driver... 正在重新构建驱动$(tput sgr 0)"
+    echo "======================================================================="
+    dkms remove  -m nvidia -v $driver --all
+    dkms install -m nvidia -v $driver
+
+    # install mdev
+    echo "======================================================================="
+    echo "$(tput setaf 2)installing mdev... 正在安装mdev设备$(tput sgr 0)"
+    echo "======================================================================="
+    cd /root
+    if [ -x /usr/sbin/mdevctl ];then echo "$(tput setaf 2)√ mdev installed! 已安装mdev$(tput sgr 0)"
     else
-    wget https://github.com/kevinshane/unlock/raw/master/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
-    chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
-    /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
-  fi
-
-  # install vgpu_unlock
-  echo "======================================================================="
-  echo "$(tput setaf 2)unlocking... 正在解锁$(tput sgr 0)"
-  echo "======================================================================="
-  # vgpu_unlock
-  cd /root
-  if [ ! -d "/root/vgpu_unlock" ];then 
-    git clone https://github.com/DualCoder/vgpu_unlock.git && chmod -R +x /root/vgpu_unlock/
-  else echo "$(tput setaf 2)√ Done cloned unlock! 已下载unlock$(tput sgr 0)"
-  fi
-
-  # modify driver
-  if [ `grep "vgpu_unlock_hooks.c" /usr/src/nvidia-$driver/nvidia/os-interface.c|wc -l` = 0 ];then
-    sed -i '20a#include "/root/vgpu_unlock/vgpu_unlock_hooks.c"' /usr/src/nvidia-$driver/nvidia/os-interface.c
-  fi
-  if [ `grep "kern.ld" /usr/src/nvidia-$driver/nvidia/nvidia.Kbuild|wc -l` = 0 ];then
-    echo "ldflags-y += -T /root/vgpu_unlock/kern.ld" >> /usr/src/nvidia-$driver/nvidia/nvidia.Kbuild
-  fi
-  if [ `grep "vgpu_unlock" /lib/systemd/system/nvidia-vgpud.service|wc -l` = 0 ];then
-    sed -i 's#ExecStart=#ExecStart=/root/vgpu_unlock/vgpu_unlock #' /lib/systemd/system/nvidia-vgpud.service
-  fi
-  if [ `grep "vgpu_unlock" /lib/systemd/system/nvidia-vgpu-mgr.service|wc -l` = 0 ];then
-    sed -i 's#ExecStart=#ExecStart=/root/vgpu_unlock/vgpu_unlock #' /lib/systemd/system/nvidia-vgpu-mgr.service
-  fi
-
-  # reaload daemon
-  systemctl daemon-reload
-
-  # remove and reinstall driver
-  echo "======================================================================="
-  echo "$(tput setaf 2)reconfiguring driver... 正在重新构建驱动$(tput sgr 0)"
-  echo "======================================================================="
-  dkms remove  -m nvidia -v $driver --all
-  dkms install -m nvidia -v $driver
-
-  # install mdev
-  echo "======================================================================="
-  echo "$(tput setaf 2)installing mdev... 正在安装mdev设备$(tput sgr 0)"
-  echo "======================================================================="
-  cd /root
-  if [ -x /usr/sbin/mdevctl ];then echo "$(tput setaf 2)√ mdev installed! 已安装mdev$(tput sgr 0)"
-  else
-  git clone https://github.com/mdevctl/mdevctl.git
-  cd mdevctl
-  make install
-  fi
+    git clone https://github.com/mdevctl/mdevctl.git
+    cd mdevctl
+    make install
+    fi
 
   # adding 11 uuid to env
   if [ `grep "AAA" /etc/environment|wc -l` = 0 ];then
@@ -233,27 +245,23 @@ export III=$III
 export JJJ=$JJJ
 export KKK=$KKK
 EOF
-  else echo "$(tput setaf 2)√ Done setup 11 UUID env! 已添加总共11个UUID环境变量$(tput sgr 0)"
-  fi
+    else echo "$(tput setaf 2)√ Done setup 11 UUID env! 已添加总共11个UUID环境变量$(tput sgr 0)"
+    fi
 
-  # adding vgpu command
-  if [ `grep "vgpu" ~/.bashrc|wc -l` = 0 ];then
-    echo "alias vgpu='/root/vgpu_unlock/scripts/vgpu-name.sh -p ALL'" >> ~/.bashrc
-  else echo "$(tput setaf 2)√ Done vgpu command! 已设置vgpu命令$(tput sgr 0)"
-  fi
+    # adding vgpu command
+    if [ `grep "vgpu" ~/.bashrc|wc -l` = 0 ];then
+      echo "alias vgpu='/root/vgpu_unlock/scripts/vgpu-name.sh -p ALL'" >> ~/.bashrc
+    else echo "$(tput setaf 2)√ Done vgpu command! 已设置vgpu命令$(tput sgr 0)"
+    fi
 
-  echo "======================================================================="
-  echo "$(tput setaf 2)Done! Please reboot!"
-  echo "after reboot, you can run <vgpu> to list all support vgpu"
-  echo "you can also run <unlock> to rerun main script"
-  echo "搞定！请重启PVE！重启后可以运行vgpu查看所有支持的型号"
-  echo "运行unlock命令可重新启动该脚本$(tput sgr 0)"
-  echo "                                                                 by ksh"
-  echo "======================================================================="
-  tput sgr 0
-}
-
-startUnlock(){
+    echo "======================================================================="
+    echo "$(tput setaf 2)Done! Please reboot!"
+    echo "after reboot, you can run <vgpu> to list all support vgpu"
+    echo "搞定！请重启PVE！重启后可以运行vgpu查看所有支持的型号"
+    echo "                                                                 by ksh"
+    echo "======================================================================="
+    tput sgr 0
+  }
   # https://cloud.google.com/compute/docs/gpus/grid-drivers-table
   # google direct download 其他驱动版本下载，请自行下载测试
   # https://storage.googleapis.com/nvidiaowo/NVIDIA-GRID-Linux-KVM-450.89-452.57.zip
@@ -628,7 +636,7 @@ deployQuadro(){
     # modify vm conf depends on gpu architecture
     if [ `grep -E "$AAA|$BBB|$CCC|$DDD|$EEE|$FFF|$GGG|$HHH|$III|$JJJ|$KKK" /etc/pve/qemu-server/$vmid.conf|wc -l` = 0 ]; then
       # if GP pascal
-      if [ `lspci | grep GP | wc -l` = 1 ]; then
+      if [ ! `lspci | grep GP | wc -l` = 0 ]; then
         if [ $uuidnumb = 1 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$AAA,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGP,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGP' -uuid $AAA" /etc/pve/qemu-server/$vmid.conf
         echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
@@ -688,7 +696,7 @@ deployQuadro(){
       fi
 
       # if TU turling  
-      if [ `lspci | grep TU | wc -l` = 1 ]; then
+      if [ ! `lspci | grep TU | wc -l` = 0 ]; then
 
         sed -i '/mdev/d' /etc/pve/qemu-server/$vmid.conf
         sed -i '/-uuid/d' /etc/pve/qemu-server/$vmid.conf
@@ -752,7 +760,7 @@ deployQuadro(){
       fi
 
       # if GM maxwell
-      if [ `lspci | grep GM | wc -l` = 1 ]; then
+      if [ ! `lspci | grep GM | wc -l` = 0 ]; then
         if [ $uuidnumb = 1 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$AAA,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $AAA" /etc/pve/qemu-server/$vmid.conf
         echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
