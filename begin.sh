@@ -622,8 +622,8 @@ deployQuadro(){
     IDofTU="1EB1" #RTX4000
     SubIDofTU="12A0"
 
-    IDofGP="1BB0" #P5000
-    SubIDofGP="11B2"
+    IDofGP="1B30" #P6000
+    SubIDofGP="11A0"
 
     IDofGM="13F0" #M5000
     SubIDofGM="1152"
@@ -830,7 +830,7 @@ deployQuadro(){
     并直通为相对应架构的专业卡
 
     - 如为9系，则自动解锁为M5000专业显卡
-    - 如为10系，则自动解锁为P5000专业显卡
+    - 如为10系，则自动解锁为P6000专业显卡
     - 如为20系，则自动解锁为RTX4000专业显卡
 
     请注意：该脚本不支持6,7,8系和30系物理显卡" 15 80) then
@@ -864,7 +864,7 @@ deployQuadro(){
     Then passthrough with appropriate Quadro
 
     - 9 series unlock to a M4000 Quadro
-    - 10 series unlock to a P5000 Quadro
+    - 10 series unlock to a P6000 Quadro
     - 20 series unlock to a RTX4000 Quadro
 
     Please be aware, 6,7,8 and 30 series are not supported" 15 80) then
@@ -1004,18 +1004,6 @@ deployvGPU(){
 }
 
 setupLXC(){
-
-  restoreGZ(){ # start restore LXC
-    if [ ! -f "/var/lib/vz/dump/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz" ];then
-      echo "$(tput setaf 1)backup not exist, downloading...远程下载中，文件较大请耐心等候...$(tput setaf 0)"
-      $(tput setaf 0)wget https://github.com/kevinshane/unlock/raw/master/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz -P /var/lib/vz/dump/
-      restoreGZ
-    else
-      pct restore 555 local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
-      echo "$(tput setaf 2)Done! Please check webgui! 搞定，请移步PVE网页端查看！$(tput setaf 0)"
-    fi
-  }
-
   if [ $L = "cn" ];then
     if (whiptail --title "LXC CentOS 7.9 授权服务器" --yes-button "继续" --no-button "返回"  --yesno "
       默认虚拟机配置：2CPU 2G
@@ -1028,7 +1016,35 @@ setupLXC(){
       2）运行登陆后务必输入passwd修改默认密码
       3）第一次启动速度较慢，请耐心等待CPU占用接近0时再访问网址
       4）默认开机不启动，但强烈推荐设置VM为开机自启
-      " 20 80) then restoreGZ
+      5）如遇无法下载，请手动百度云：
+      https://pan.baidu.com/s/15TYh5PDfqmcEgwoDEv0aQQ 提取码：rldj
+      下载完手动上传到/var/lib/vz/dump/里，注意下载的文件不要重命名！
+      上传完毕后，重新运行此脚本即可
+      " 23 80) then
+
+      vmid=$(whiptail --inputbox "请输入授权服务器的虚拟机ID，默认是100" 8 60 100 --title "输入VM的ID值" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ $exitstatus = 0 ]; then
+          if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then typeuuid
+          else 
+          whiptail --title "Warnning" --msgbox "请重新输入100-999范围内的数字！" 10 60
+          setupLXC
+          fi
+      fi
+
+      if [ ! -f "/var/lib/vz/dump/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz" ];then
+        echo "$(tput setaf 1)远程下载中，文件较大请耐心等候...$(tput setaf 0)"
+        # $(tput setaf 0)wget https://github.com/kevinshane/unlock/raw/master/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz -P /var/lib/vz/dump/
+        pip3 install gdown
+        gdown https://drive.google.com/uc?id=11xQe_9F_8zKX3WEqE-oq9EnmpdUkWhSU -O /var/lib/vz/dump/
+        
+        pct restore $vmid local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
+        echo "$(tput setaf 2)搞定，请移步PVE网页端查看！$(tput setaf 0)"
+      else
+        pct restore $vmid local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
+        echo "$(tput setaf 2)搞定，请移步PVE网页端查看！$(tput setaf 0)"
+      fi
+
       else main
     fi
   else # EN
@@ -1043,7 +1059,30 @@ setupLXC(){
     2) Please change root login password when first launch
     3) Slow on first launch, please be patient
     4) It's recommanded to set the VM start on PVE boots
-    " 20 80) then restoreGZ
+    " 20 80) then
+
+    vmid=$(whiptail --inputbox "What's the VM id you want to deploy license sever? default is 100" 8 60 100 --title "define VM ID" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+        if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then typeuuid
+        else 
+        whiptail --title "Warnning" --msgbox "Invalid VM ID. Choose between 100-999!" 10 60
+        setupLXC
+        fi
+    fi
+
+    if [ ! -f "/var/lib/vz/dump/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz" ];then
+      echo "$(tput setaf 1)backup not exist, downloading from google drive...$(tput setaf 0)"
+      pip3 install gdown
+      gdown https://drive.google.com/uc?id=11xQe_9F_8zKX3WEqE-oq9EnmpdUkWhSU -O /var/lib/vz/dump/
+      
+      pct restore $vmid local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
+      echo "$(tput setaf 2)Done! Please check webgui! $(tput setaf 0)"
+    else
+      pct restore $vmid local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
+      echo "$(tput setaf 2)Done! Please check webgui! $(tput setaf 0)"
+    fi
+
     else main
     fi
   fi
