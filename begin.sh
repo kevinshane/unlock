@@ -539,8 +539,7 @@ chVram(){
     请注意：请停止所有VM再运行该脚本！！！
     " 20 80) then
 
-    selectVram=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.2 " --menu "
-    Github: https://github.com/kevinshane/unlock
+    selectVram=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
     选择配置，回车执行：" 25 60 15 \
     "a" "切分为1G显存" \
     "b" "切分为2G显存" \
@@ -587,8 +586,7 @@ chVram(){
     Please STOP all VM before running this script !!!
     " 24 80) then
 
-    selectVram=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.2 " --menu "
-    Github: https://github.com/kevinshane/unlock
+    selectVram=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
     select options: " 25 60 15 \
     "a" "slice to 1G vRam" \
     "b" "slice to 2G vRam" \
@@ -1183,9 +1181,11 @@ main(){
   fi
 
   if [ $L = "cn" ];then
-  OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.2 " --menu "
-  Github: https://github.com/kevinshane/unlock
-  请依照顺序选择配置，回车执行：" 25 60 15 \
+  OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
+  新装PVE请先运行步骤a，b，c
+  解锁成Quadro选d和e选项！解锁成vGPU选f和g选项！
+  请勿同时混合使用这两种模式
+  请依照顺序选择配置，回车执行：" 27 60 15 \
   "a" "更新系统" \
   "b" "解锁vGPU" \
   "c" "美化系统" \
@@ -1200,9 +1200,12 @@ main(){
   "q" "退出程序" \
   3>&1 1>&2 2>&3)
   else
-  OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.2 " --menu "
-  Github: https://github.com/kevinshane/unlock
-  select option, enter to apply: " 25 60 15 \
+  OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
+  For fresh install PVE, run (a), (b),(c)first
+  Unlock to Quadro choose (d) and (e)
+  Unlock to vGPU choose (f) and (g)
+  Do not mix unlock type when using
+  Select options, enter to apply: " 28 60 15 \
   "a" "Update PVE" \
   "b" "Unlock vGPU" \
   "c" "Beautify PVE" \
