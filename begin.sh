@@ -37,6 +37,7 @@ JJJ="108d9d06-eb33-4fe0-8115-cc2d5f6f8589"
 KKK="11049ddb-b7ab-4a0c-9111-ab4529b39489"
 
 vgpuScriptPath="/root/vgpu_unlock/scripts/vgpu-name.sh"
+PCI="$(lspci | grep -i nvidia | grep -i vga | awk '{print $1}')"
 
 startUpdate(){
   runUpdate(){
@@ -387,13 +388,21 @@ EOF
 
 checkStatus(){
   memory=$(nvidia-smi --query-gpu=memory.total --format=csv | awk '/^memory/ {getline; print}' | awk '{print $1}')
-  vgpuScriptPath="/root/vgpu_unlock/scripts/vgpu-name.sh"
-  currentType=$($vgpuScriptPath -p ALL | grep -w "$(mdevctl list | grep -m1 nvidia | awk '{print $3}')")
-  Vnum=$(echo "$currentType" | grep -o '[[:digit:]]*' | sed -n '2p')
-  Vmemory=$(($memory / 1000))
-  float=$(($Vmemory / $Vnum))
 
-  if [ $L = "cn" ];then # CN
+  # check if currently has sliced mdev, if returns a list, then no sliced mdev
+  if [ ! `$vgpuScriptPath -p ALL | grep -w "$(mdevctl list | grep -m1 nvidia | awk '{print $3}')" | wc -l` = 1 ];then
+    currentType=0
+    Vnum=0
+    Vmemory=$(($memory / 1000))
+    float=0
+  else
+    currentType=$($vgpuScriptPath -p ALL | grep -w "$(mdevctl list | grep -m1 nvidia | awk '{print $3}')")
+    Vnum=$(echo "$currentType" | grep -o '[[:digit:]]*' | sed -n '2p')
+    Vmemory=$(($memory / 1000))
+    float=$(($Vmemory / $Vnum))
+  fi
+
+  if [[ $L = "cn" ]];then # CN
   echo "$(tput setaf 2)  ===================================================================
     - 物理显卡参数
     型号：$(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
@@ -411,8 +420,8 @@ checkStatus(){
     6）当切分为8G显存时，可同时运行$(($Vmemory / 8))台VM虚拟机
 
     - 当前切分状态
-    vGPU切分型号：$currentType
-    当前vGPU显存："$Vnum"G
+    切分型号：$currentType
+    切分显存："$Vnum"G
     可供使用的vGPU数量：$float个
                                                                 -- by ksh
   =======================================================================$(tput sgr 0)"
@@ -435,8 +444,8 @@ checkStatus(){
     6) When slicing to 8G Vram, it can run up to $(($Vmemory / 8)) VM simultaneously
 
     - vGPU slicing status
-    vGPU type: $currentType
-    Current vRam: "$Vnum"G
+    Sliced type: $currentType
+    Sliced vRam: "$Vnum"G
     Current Available Count: $float
                                                                 -- by ksh
   =======================================================================$(tput sgr 0)" 
@@ -445,11 +454,8 @@ checkStatus(){
 
 chVram(){
   startVramSlice(){
-    PCI="$(lspci | grep -i nvidia | grep -i vga | awk '{print $1}')"
     vxQ="$($vgpuScriptPath -p ALL | grep -e -"$selectVram"Q | awk '{print $3}')"
-
     memory=$(nvidia-smi --query-gpu=memory.total --format=csv | awk '/^memory/ {getline; print}' | awk '{print $1}')
-
     killvgpu(){
       mdevctl stop -u $AAA
       mdevctl stop -u $BBB
@@ -894,8 +900,6 @@ deployQuadro(){
 }
 
 deployvGPU(){
-  PCI="$(lspci | grep -i nvidia | grep -i vga | awk '{print $1}')"
-
   vGPUassign(){
 
     # delete any quadro conf if exist
@@ -928,8 +932,8 @@ deployvGPU(){
     # adding uuid to conf
     sed -i -r "1i args: -uuid 00000000-0000-0000-0000-000000000$vmid" /etc/pve/qemu-server/$vmid.conf
 
-    echo "$(tput setaf 2)vGPU assigned! Go to PVE webGui->Hardward->add PCI device->choose your desire vGPU type$(tput setaf 0)"
-    echo "$(tput setaf 2)设置完毕！请到网页端->硬件->PCI device->添加你希望的类型$(tput setaf 0)"
+    echo "$(tput setaf 2)vGPU assigned! Go to PVE webGui->VM$vmid->Hardward->add PCI device->choose your desire vGPU type$(tput setaf 0)"
+    echo "$(tput setaf 2)设置完毕！请到网页端->虚拟机$vmid->硬件->PCI设备->添加你希望的类型$(tput setaf 0)"
   }
 
   vmidinput(){
@@ -1210,7 +1214,7 @@ checkNVlog(){
   main
 }
 
-# --------------------------------------------------------- end function --------------------------------------------------------- #
+# --------------------------------------------------------- end module function --------------------------------------------------------- #
 
 main(){
   if (whiptail --title "Language 选择语言" --yes-button "中文" --no-button "English"  --yesno "Choose Language - 选择语言:" 10 60) then
@@ -1240,7 +1244,7 @@ main(){
   3>&1 1>&2 2>&3)
   else
   OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
-  For fresh install PVE, run (a), (b),(c)first
+  For fresh install PVE, run (a), (b), (c)first
   Unlock to Quadro choose (d) and (e)
   Unlock to vGPU choose (f) and (g)
   Do not mix unlock type when using
