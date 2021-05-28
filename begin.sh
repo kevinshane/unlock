@@ -37,7 +37,7 @@ JJJ="108d9d06-eb33-4fe0-8115-cc2d5f6f8589"
 KKK="11049ddb-b7ab-4a0c-9111-ab4529b39489"
 
 vgpuScriptPath="/root/vgpu_unlock/scripts/vgpu-name.sh"
-PCI="$(lspci | grep -i nvidia | grep -i vga | awk '{print $1}')"
+PCI="$(lspci | grep -i nvidia | grep -i vga | grep -E 'GM|GP|TU' | awk '{print $1}')"
 
 startUpdate(){
   runUpdate(){
@@ -707,57 +707,57 @@ deployQuadro(){
 
         if [ $uuidnumb = 1 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$AAA,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $AAA" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 2 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$BBB,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $BBB" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 3 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$CCC,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $CCC" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 4 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$DDD,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $DDD" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 5 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$EEE,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $EEE" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 6 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$FFF,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $FFF" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 7 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$GGG,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $GGG" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 8 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$HHH,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $HHH" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 9 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$III,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $III" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 10 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$JJJ,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $JJJ" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 11 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$KKK,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofTU,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofTU' -uuid $KKK" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
       
@@ -767,57 +767,57 @@ deployQuadro(){
       if [ ! `lspci | grep GM | wc -l` = 0 ]; then
         if [ $uuidnumb = 1 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$AAA,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $AAA" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 2 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$BBB,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $BBB" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 3 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$CCC,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $CCC" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 4 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$DDD,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $DDD" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 5 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$EEE,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $EEE" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 6 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$FFF,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $FFF" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 7 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$GGG,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $GGG" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 8 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$HHH,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $HHH" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 9 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$III,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $III" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 10 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$JJJ,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $JJJ" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
         if [ $uuidnumb = 11 ]; then
         sed -r -i "1i args: -device 'vfio-pci,sysfsdev=/sys/bus/mdev/devices/$KKK,display=off,id=hostpci0.0,bus=ich9-pcie-port-1,addr=0x0.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x$IDofGM,x-pci-sub-vendor-id=0x10de,x-pci-sub-device-id=0x$SubIDofGM' -uuid $KKK" /etc/pve/qemu-server/$vmid.conf
-        echo "$(tput setaf 2)Done modified $vmid.conf! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
+        echo "$(tput setaf 2)Done modified $vmid! 已完成虚拟机ID为$vmid的Quadro显卡直通！$(tput setaf 0)"
         fi
 
 
