@@ -1029,26 +1029,26 @@ setupLXC(){
       vmid=$(whiptail --inputbox "请输入授权服务器的虚拟机ID，默认是100" 8 60 100 --title "输入VM的ID值" 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ $exitstatus = 0 ]; then
-          if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then typeuuid
+          if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then
+          
+            if [ ! -f "/var/lib/vz/dump/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz" ];then
+            echo "$(tput setaf 1)远程下载中，文件较大请耐心等候...$(tput setaf 0)"
+            # $(tput setaf 0)wget https://github.com/kevinshane/unlock/raw/master/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz -P /var/lib/vz/dump/
+            pip3 install gdown
+            gdown https://drive.google.com/uc?id=11xQe_9F_8zKX3WEqE-oq9EnmpdUkWhSU -O /var/lib/vz/dump/
+            
+            pct restore $vmid local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
+            echo "$(tput setaf 2)搞定，请移步PVE网页端查看！$(tput setaf 0)"
+            else
+            pct restore $vmid local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
+            echo "$(tput setaf 2)搞定，请移步PVE网页端查看！$(tput setaf 0)"
+            fi
+
           else 
           whiptail --title "Warnning" --msgbox "请重新输入100-999范围内的数字！" 10 60
           setupLXC
           fi
       fi
-
-      if [ ! -f "/var/lib/vz/dump/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz" ];then
-        echo "$(tput setaf 1)远程下载中，文件较大请耐心等候...$(tput setaf 0)"
-        # $(tput setaf 0)wget https://github.com/kevinshane/unlock/raw/master/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz -P /var/lib/vz/dump/
-        pip3 install gdown
-        gdown https://drive.google.com/uc?id=11xQe_9F_8zKX3WEqE-oq9EnmpdUkWhSU -O /var/lib/vz/dump/
-        
-        pct restore $vmid local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
-        echo "$(tput setaf 2)搞定，请移步PVE网页端查看！$(tput setaf 0)"
-      else
-        pct restore $vmid local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
-        echo "$(tput setaf 2)搞定，请移步PVE网页端查看！$(tput setaf 0)"
-      fi
-
       else main
     fi
   else # EN
@@ -1068,25 +1068,25 @@ setupLXC(){
     vmid=$(whiptail --inputbox "What's the VM id you want to deploy license sever? default is 100" 8 60 100 --title "define VM ID" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-        if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then typeuuid
+        if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then
+
+          if [ ! -f "/var/lib/vz/dump/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz" ];then
+          echo "$(tput setaf 1)backup not exist, downloading...$(tput setaf 0)"
+          pip3 install gdown
+          gdown https://drive.google.com/uc?id=11xQe_9F_8zKX3WEqE-oq9EnmpdUkWhSU -O /var/lib/vz/dump/
+          
+          pct restore $vmid local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
+          echo "$(tput setaf 2)Done! Please check webgui! $(tput setaf 0)"
+          else
+          pct restore $vmid local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
+          echo "$(tput setaf 2)Done! Please check webgui! $(tput setaf 0)"
+          fi
+
         else 
         whiptail --title "Warnning" --msgbox "Invalid VM ID. Choose between 100-999!" 10 60
         setupLXC
         fi
     fi
-
-    if [ ! -f "/var/lib/vz/dump/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz" ];then
-      echo "$(tput setaf 1)backup not exist, downloading from google drive...$(tput setaf 0)"
-      pip3 install gdown
-      gdown https://drive.google.com/uc?id=11xQe_9F_8zKX3WEqE-oq9EnmpdUkWhSU -O /var/lib/vz/dump/
-      
-      pct restore $vmid local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
-      echo "$(tput setaf 2)Done! Please check webgui! $(tput setaf 0)"
-    else
-      pct restore $vmid local:backup/vzdump-lxc-104-2021_04_26-20_21_33.tar.gz --storage local-lvm --unique 1 --memory 2048 --cores 2
-      echo "$(tput setaf 2)Done! Please check webgui! $(tput setaf 0)"
-    fi
-
     else main
     fi
   fi
