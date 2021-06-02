@@ -105,8 +105,10 @@ startUpdate(){
   if [ $L = "cn" ];then # CN
     if (whiptail --title "同意条款及注意事项" --yes-button "继续" --no-button "返回"  --yesno "
     ----------------------------------------------------------------------
-    此脚本涉及的命令行操作具备一定程度的硬件损坏风险，固仅供测试
-    部署及使用者需自行承担相关操作风险及后果，up主不对任何操作承担相关责任
+    此脚本涉及的命令行操作具备一定程度损坏硬件的风险，固仅供测试
+    此脚本核心代码均来自网络，up主仅搬运流程并自动化，固版权归属原作者
+    部署及使用者需自行承担相关操作风险及后果，up主不对操作承担任何相关责任
+    继续执行则表示使用者无条件同意以上条款，如不同意请退出脚本
     ----------------------------------------------------------------------
 
     PVE无痛自动化:
@@ -146,8 +148,8 @@ startUnlock(){
   runUnlock(){
     cd /root/
     # driver="440.87"
-    driver="450.80"
-    # driver="460.32.04"
+    # driver="450.80"
+    driver="460.32.04"
 
     # install apps
     echo "======================================================================="
@@ -274,6 +276,7 @@ EOF
     此脚本涉及的命令行操作具备一定程度损坏硬件的风险，固仅供测试
     此脚本核心代码均来自网络，up主仅搬运流程并自动化，固版权归属原作者
     部署及使用者需自行承担相关操作风险及后果，up主不对操作承担任何相关责任
+    继续执行则表示使用者无条件同意以上条款，如不同意请退出脚本
     ----------------------------------------------------------------------
 
     1. 此脚本需主板和CPU同时支持vt-x/vt-d指令集，并且已开启
@@ -288,7 +291,7 @@ EOF
 
     请认真阅读以上条款，同意回车继续，不同意请退出
 
-    " 25 80) then runUnlock
+    " 26 80) then runUnlock
     else main
     fi
     else
@@ -311,79 +314,11 @@ EOF
 
     Agree to continue, disagree to go back to main menu
 
-    " 25 80) then runUnlock
+    " 26 80) then runUnlock
     else main
     fi
   fi
   tput sgr 0
-}
-
-startBeautify(){
-  installBeautify(){
-  echo "======================================================================="
-  echo "$(tput setaf 2)step 1 --> installing lsd + bat 正在安装美化程序...$(tput sgr 0)"
-  echo "======================================================================="
-  wget https://github.com/Peltoche/lsd/releases/download/0.20.1/lsd_0.20.1_amd64.deb
-  wget https://github.com/sharkdp/bat/releases/download/v0.18.1/bat_0.18.1_amd64.deb
-  dpkg -i lsd_0.20.1_amd64.deb && rm lsd_0.20.1_amd64.deb
-  dpkg -i bat_0.18.1_amd64.deb && rm bat_0.18.1_amd64.deb
-  if [ `grep "lsd" ~/.bashrc|wc -l` = 0 ];then
-  cat <<EOF >> ~/.bashrc
-alias ls='lsd'
-alias l='ls -l'
-alias ll='ls -l'
-alias la='ls -a'
-alias lla='ls -la'
-alias lt='ls --tree'
-alias cat='bat'
-EOF
-  else echo "$(tput setaf 2)√ Done lsd installed! 已添加ls环境变量$(tput sgr 0)"
-  fi
-
-  echo "======================================================================="
-  echo "$(tput setaf 2)step 2 --> installing bpytop 正在安装bpytop...$(tput sgr 0)"
-  echo "======================================================================="
-  for app in python3-pip
-  do
-    if [ `dpkg -s $app|grep Status|wc -l` = 1 ]; then echo "$(tput setaf 2)√ 已安装$app$(tput sgr 0) Done installing $app"
-    else 
-      echo "$(tput setaf 1)× 未安装$app$(tput sgr 0)"
-      apt install -y $app
-    fi
-  done
-  pip3 install bpytop --upgrade
-
-  echo "======================================================================="
-  echo "$(tput setaf 2)Done! Please restart SSH! 搞定！请重启SSH，食用方式：bpytop，ls，ll，la，l，cat$(tput sgr 0)"
-  echo "======================================================================="
-  }
-  if [ $L = "cn" ];then
-  if (whiptail --title "同意条款及注意事项" --yes-button "继续" --no-button "返回"  --yesno "
-  ----------------------------------------------------------------------
-  适用于PVE下美化基础LS，CAT，TOP命令，如添加带颜色文件夹图标等
-  ----------------------------------------------------------------------
-
-  LS美化 - 执行ls, ll, l, la查看带颜色图标！替代传统ls黑白无图标
-  CAT美化- 执行cat命令查看代码高亮，q退出！替代传统cat黑白无高亮
-  TOP美化- 执行bpytop查看硬件温度，cpu/内存/硬盘/网络占用！替代传统top
-  " 20 75) then installBeautify
-  else main
-  fi
-
-  else
-  
-  if (whiptail --title "Agreement" --yes-button "Continue" --no-button "Go Back"  --yesno "
-  ----------------------------------------------------------------------
-  Script auto installs lsd, bat, bpytop
-  ----------------------------------------------------------------------
-
-  beautify ls - A colorful ls command
-  beautify cat - A colorful cat command
-  beautify top - bpytop - A full hardware monitoring app
-  " 20 75) then installBeautify
-  else main
-  fi
-  fi
 }
 
 checkStatus(){
@@ -530,21 +465,6 @@ chVram(){
   }
 
   if [ $L = "cn" ];then # CN
-    if (whiptail --title "同意条款及注意事项" --yes-button "同意" --no-button "返回"  --yesno "
-    ----------------------------------------------------------------------
-    此脚本涉及的命令行操作具备一定程度损坏硬件的风险，固仅供测试
-    此脚本核心代码均来自网络，up主仅搬运流程并自动化，固版权归属原作者
-    部署及使用者需自行承担相关操作风险及后果，up主不对操作承担任何相关责任
-    ----------------------------------------------------------------------
-
-    当系统重启后，脚本会自动读取上一次切分，无需重复设置
-    当需要重新切分显存时，请再次运行该脚本
-
-    请注意：请停止所有VM再运行该脚本！！！
-    请注意：请停止所有VM再运行该脚本！！！
-    请注意：请停止所有VM再运行该脚本！！！
-    " 20 80) then
-
     selectVram=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
     选择配置，回车执行：" 25 60 15 \
     "a" "切分为1G显存" \
@@ -569,28 +489,8 @@ chVram(){
     q ) main;;
     esac
     startVramSlice
-    else main
-    fi
 
   else # EN
-
-    if (whiptail --title "Agreement" --yes-button "I Agree" --no-button "Go Back"  --yesno "
-    ----------------------------------------------------------------
-    Script may possible damaging your harware, use at your own risk.
-    I'll not take responible to what you have done in the next step.
-    Please do not use for commercial or any production environment.
-    Credits to vgpu_unlock github that make this happen.
-    ----------------------------------------------------------------
-
-    When PVE boots up, script remembers the last choice.
-    PVE auto creates mdev devices, no need to manually creates.
-    Run this script again when you need different vram type.
-    The script by default creates Q-series type.
-
-    Please STOP all VM before running this script !!!
-    Please STOP all VM before running this script !!!
-    Please STOP all VM before running this script !!!
-    " 24 80) then
 
     selectVram=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
     select options: " 25 60 15 \
@@ -598,7 +498,7 @@ chVram(){
     "b" "slice to 2G vRam" \
     "c" "slice to 3G vRam" \
     "d" "slice to 4G vRam" \
-    "q" "back to Main Menu" \
+    "q" "Go back to Main Menu" \
     3>&1 1>&2 2>&3)
     case "$selectVram" in
     a )	selectVram=1
@@ -616,8 +516,6 @@ chVram(){
     q ) main;;
     esac
     startVramSlice
-    else main
-    fi
 
   fi
 }
@@ -823,36 +721,70 @@ deployQuadro(){
 
       fi
 
-      # otherwise
+      # add comments
+      sed -r -i "1i #Quadro uuid=$uuidnumb" /etc/pve/qemu-server/$vmid.conf
+
       else
       echo "$(tput setaf 1)Already modified! Please check VM conf: $vmid $(tput setaf 0)"
       echo "$(tput setaf 1)虚拟机ID$vmid已存在Quadro显卡，已跳过！ $(tput setaf 0)"
     fi
   }
 
+  typeuuid(){
+    clear
+    uuidnumb=$(whiptail  --title "vGPU Unlock Tools - Version : 0.0.3" --menu "
+    Choose Defined UUID between 1 to 11:
+    请选择预设的11个UUID其中一个，建议按顺序选择：" 22 60 12 \
+    "1" "Preset UUID1 - 预设1"\
+    "2" "Preset UUID2 - 预设2"\
+    "3" "Preset UUID3 - 预设3"\
+    "4" "Preset UUID4 - 预设4"\
+    "5" "Preset UUID5 - 预设5"\
+    "6" "Preset UUID6 - 预设6"\
+    "7" "Preset UUID7 - 预设7"\
+    "8" "Preset UUID8 - 预设8"\
+    "9" "Preset UUID9 - 预设9"\
+    "10" "Preset UUID10 - 预设10"\
+    "11" "Preset UUID11 - 预设11"\
+    3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      if [ "$uuidnumb" -le 11 -a "$vmid" -ge 1 ]; then runQuadro
+      else
+      whiptail --title "Warnning" --msgbox "Invalid UUID. Choose between 1-11! 请重新输入1-11范围内的数字！" 10 60
+      typeuuid
+      fi
+    fi
+  }
+
   if [ $L = "cn" ];then # CN
     if (whiptail --title "同意条款及注意事项" --yes-button "同意" --no-button "返回"  --yesno "
-    自动检测主板当前的物理显卡
-    并直通为相对应架构的专业卡
+    此脚本将自动部署相对应架构的专业卡到虚拟机
 
     - 如为9系，则自动解锁为M5000专业显卡
     - 如为10系，则自动解锁为P6000专业显卡
     - 如为20系，则自动解锁为RTX4000专业显卡
 
     请注意：该脚本不支持6,7,8系和30系物理显卡" 15 80) then
-    typeuuid(){ # typing uuid
-      uuidnumb=$(whiptail --inputbox "请输入UUID，默认是1，可选范围1-11" 8 60 1 --title "定义UUID值" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ $exitstatus = 0 ]; then
-          if [ "$uuidnumb" -le 11 -a "$vmid" -ge 1 ]; then runQuadro
-          else 
-          whiptail --title "Warnning" --msgbox "Invalid UUID. Choose between 1-11! 请重新输入1-11范围内的数字！" 10 60
-          typeuuid
-          fi
-      fi
-    }
 
-    vmid=$(whiptail --inputbox "请输入你希望添加vGPU的虚拟机ID值，默认是101" 8 60 101 --title "输入VM的ID值" 3>&1 1>&2 2>&3)
+    # select VM's ID
+    clear
+    list=`qm list|awk 'NR>1{print $1":"$2".................."$3" "}'`
+    echo -n "">lsvm
+    ls=`for i in $list;do echo $i|awk -F ":" '{print $1" "$2}'>>lsvm;done`
+    ls=`cat lsvm`
+    rm lsvm
+    h=`echo $ls|wc -l`
+    let h=$h*1
+    if [ $h -lt 30 ];then
+        h=30
+    fi
+    list1=`echo $list|awk 'NR>1{print $1}'`
+    vmid=$(whiptail  --title "vGPU Unlock Tools - Version : 0.0.3" --menu "
+    选择虚拟机：" 20 60 10 \
+    $(echo $ls) \
+    3>&1 1>&2 2>&3)
+
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
         if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then typeuuid
@@ -874,49 +806,115 @@ deployQuadro(){
     - 20 series unlock to a RTX4000 Quadro
 
     Please be aware, 6,7,8 and 30 series are not supported" 15 80) then
-    typeuuid(){ # typing uuid
-        uuidnumb=$(whiptail --inputbox "Typing UUID, 1-11 available. Default is 1" 8 60 1 --title "Define UUID" 3>&1 1>&2 2>&3)
-        exitstatus=$?
-        if [ $exitstatus = 0 ]; then
-            if [ "$uuidnumb" -le 11 -a "$vmid" -ge 1 ]; then runQuadro
-            else 
-            whiptail --title "Warnning" --msgbox "Invalid UUID. Choose between 1-11!" 10 60
-            typeuuid
-            fi
-        fi
-    }
-    
-    vmid=$(whiptail --inputbox "What's the VM id you want to add a Quadro? default is 101" 8 60 101 --title "define VM ID" 3>&1 1>&2 2>&3)
+
+    # select VM's ID
+    clear
+    list=`qm list|awk 'NR>1{print $1":"$2".................."$3" "}'`
+    echo -n "">lsvm
+    ls=`for i in $list;do echo $i|awk -F ":" '{print $1" "$2}'>>lsvm;done`
+    ls=`cat lsvm`
+    rm lsvm
+    h=`echo $ls|wc -l`
+    let h=$h*1
+    if [ $h -lt 30 ];then
+        h=30
+    fi
+    list1=`echo $list|awk 'NR>1{print $1}'`
+    vmid=$(whiptail  --title "vGPU Unlock Tools - Version : 0.0.3" --menu "
+    Choose a VM: " 20 60 10 \
+    $(echo $ls) \
+    3>&1 1>&2 2>&3)
+
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
         if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then typeuuid
         else 
         whiptail --title "Warnning" --msgbox "Invalid VM ID. Choose between 100-999!" 10 60
+        deployQuadro
         fi
     fi
+
     else main
     fi
+
+  
+  fi
+}
+
+QuadroMenu(){
+  if [ $L = "cn" ];then # CN
+
+    OPTION=$(whiptail --title "同意条款及注意事项" --menu "
+    ----------------------------------------------------------------------
+    此脚本涉及的命令行操作具备一定程度损坏硬件的风险，固仅供测试
+    此脚本核心代码均来自网络，up主仅搬运流程并自动化，固版权归属原作者
+    部署及使用者需自行承担相关操作风险及后果，up主不对操作承担任何相关责任
+    继续执行则表示使用者无条件同意以上条款，如不同意请退出脚本
+    ----------------------------------------------------------------------
+
+    Quadro切分无需授权，解锁除CUDA之外的所有功能
+    显存被切分后，重启时自动记忆最后一次切分，无需重复设置
+    当需要重新分配显存时，请再次执行步骤（a）
+
+    ！！！请注意：请停止所有VM再运行该脚本！！！
+    ！！！请注意：请停止所有VM再运行该脚本！！！
+    ！！！请注意：请停止所有VM再运行该脚本！！！
+
+    请依照顺序选择配置，回车执行：" 30 80 5 \
+    "a" "切分（重切分）显存" \
+    "b" "部署已切分的显卡到虚拟机" \
+    "q" "返回主菜单" \
+    3>&1 1>&2 2>&3)
+    case "$OPTION" in
+    a ) chVram;;
+    b ) deployQuadro;;
+    q ) tput sgr 0
+      main;;
+    esac
+    tput sgr 0
+
+  else # EN
+
+    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
+    ----------------------------------------------------------------
+    Script may possible damaging your harware, use at your own risk.
+    I'll not take responible to what you have done in the next step.
+    Please do not use for commercial or any production environment.
+    Credits to vgpu_unlock github that make this happen.
+    ----------------------------------------------------------------
+
+    Option1 unlocks everything except for CUDA, doesn't require license
+    You must first slice to a profile, then deploy to a VM
+    Run step a) first, then run step b)
+    
+    Please STOP all VM before running this script !!!
+    Please STOP all VM before running this script !!!
+    Please STOP all VM before running this script !!!
+
+    " 30 80 5 \
+    "a" "Slice(Re-Slice) VRam profile" \
+    "b" "Deploy a sliced Quadro to VM" \
+    "q" "Go back to Main Menu" \
+    3>&1 1>&2 2>&3)
+    case "$OPTION" in
+    a ) chVram;;
+    b ) deployQuadro;;
+    q ) tput sgr 0
+      main;;
+    esac
+    tput sgr 0
+
   fi
 }
 
 deployvGPU(){
+
   vGPUassign(){
 
     # delete any quadro conf if exist
     sed -i '/vfio-pci,sysfsdev=/d' /etc/pve/qemu-server/$vmid.conf
     sed -i '/mdev/d' /etc/pve/qemu-server/$vmid.conf
     sed -i '/args: -uuid/d' /etc/pve/qemu-server/$vmid.conf
-
-    # # for vGPU wip
-    # vmlist=($(qm list | sed '1d' | awk '{print $1}'))
-    # # array=($(sed -E 's/([[:alnum:]]+)/"&"/g;s/ /,/g' <<< ${vmlist[@]}))
-    # array=($(sed -E 's/([[:alnum:]]+)/"&"/g' <<< ${vmlist[@]}))
-    # vmid=$(whiptail --title "choose VM" --checklist "Select VM" 22 80 14 "${array[@]}")
-    # cat *.conf | grep -i args | awk '{print $3}'
-
-    # config mdev vgpu with license
-    # qm list|sed '1d'|awk '{print $1}'|while read line ; do mdevctl stop -u 00000000-0000-0000-0000-000000000$line; done
-    # qm list|sed '1d'|awk '{print $1}'|while read line ; do mdevctl start -u 00000000-0000-0000-0000-000000000$line -p 0000:$PCI --type $vxQ; done
 
     # stop current mdev
     qm list|sed '1d'|awk '{print $1}'|while read line ; 
@@ -931,79 +929,96 @@ deployvGPU(){
 
     # adding uuid to conf
     sed -i -r "1i args: -uuid 00000000-0000-0000-0000-000000000$vmid" /etc/pve/qemu-server/$vmid.conf
+    sed -r -i "1i #vGPU added" /etc/pve/qemu-server/$vmid.conf
 
     echo "$(tput setaf 2)vGPU assigned! Go to PVE webGui->VM$vmid->Hardward->add PCI device->choose your desire vGPU type$(tput setaf 0)"
     echo "$(tput setaf 2)设置完毕！请到网页端->虚拟机$vmid->硬件->PCI设备->添加你希望的类型$(tput setaf 0)"
   }
 
-  vmidinput(){
-    if [ $L = "cn" ];then # CN
-      vmid=$(whiptail --inputbox "请输入你希望添加vGPU的虚拟机ID值，默认是101" 8 60 101 --title "输入VM的ID值" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ $exitstatus = 0 ]; then
-        if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then vGPUassign
-        else 
-        whiptail --title "Warnning" --msgbox "请重新输入100-999范围内的数字！" 10 80
-        deployvGPU
-        fi
-      fi
+  # select VM's ID
+  clear
+  list=`qm list|awk 'NR>1{print $1":"$2".................."$3" "}'`
+  echo -n "">lsvm
+  ls=`for i in $list;do echo $i|awk -F ":" '{print $1" "$2}'>>lsvm;done`
+  ls=`cat lsvm`
+  rm lsvm
+  h=`echo $ls|wc -l`
+  let h=$h*1
+  if [ $h -lt 30 ];then
+      h=30
+  fi
+  list1=`echo $list|awk 'NR>1{print $1}'`
+  vmid=$(whiptail  --title "vGPU Unlock Tools - Version : 0.0.3" --menu "
+  Choose a VM: 
+  选择虚拟机：" 20 60 10 \
+  $(echo $ls) \
+  3>&1 1>&2 2>&3)
 
-    else # EN
-      vmid=$(whiptail --inputbox "What's the VM id you want to add a vGPU? default is 101" 8 60 101 --title "define VM ID" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ $exitstatus = 0 ]; then
-          if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then vGPUassign
-          else 
-          whiptail --title "Warnning" --msgbox "Invalid VM ID. Choose between 100-999!" 10 60
-          fi
-      else main
-      fi
-
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    if [ "$vmid" -le 999 -a "$vmid" -ge 100 ]; then vGPUassign
+    else 
+    whiptail --title "Warnning" --msgbox "
+    Invalid VM ID. Choose between 100-999!
+    请重新输入100-999范围内的数字！" 10 60
+    deployvGPU
     fi
-  }
+  fi
+}
 
+vGPUMenu(){
   if [ $L = "cn" ];then # CN
-    if (whiptail --title "同意条款及注意事项" --yes-button "同意" --no-button "返回"  --yesno "
+    OPTION=$(whiptail --title "同意条款及注意事项" --menu "
     ----------------------------------------------------------------------
     此脚本涉及的命令行操作具备一定程度损坏硬件的风险，固仅供测试
     此脚本核心代码均来自网络，up主仅搬运流程并自动化，固版权归属原作者
     部署及使用者需自行承担相关操作风险及后果，up主不对操作承担任何相关责任
+    继续执行则表示使用者无条件同意以上条款，如不同意请退出脚本
     ----------------------------------------------------------------------
-    脚本自动添加vGPU到指定VM，从而获得高性能硬件加速
-    Quadro与vGPU最大的区别：
-    1. 解锁成Quadro免费，解锁成vGPU需要授权服务器和购买许可
-    2. Quadro没有CUDA，vGPU有CUDA
-    3. Quadro的OpenGL性能略微强过vGPU
 
-    此脚本仅自动化vGPU直通，绿色环保无痛部署:P
-    up主本人不提供任何相关授权信息及购买渠道
-    一切关于部署授权费用等信息，请咨询专业机构购买正版许可
-    或自行注册申请90天试用授权
-    " 20 80) then vmidinput
-    else main
-    fi
+    - vGPU将解锁所有功能，即完整的CUDA和OpenCL
+    - vGPU切分需要购买正版授权
+    - vGPU切分需要部署一台虚拟机授权服务器，并且为这台虚拟机赋予授权信息
+    - 如果以无授权方式运行虚拟机，则显卡的所有功能无法正常使用
+    - 请根据需求决定是否需要CUDA，如不需要，请使用方案一：Quadro切分
 
+    ！！！请注意：请停止所有VM再运行该脚本！！！
+    ！！！请注意：请停止所有VM再运行该脚本！！！
+    ！！！请注意：请停止所有VM再运行该脚本！！！
+
+    请依照顺序选择配置，回车执行：" 30 80 3 \
+    "a" "添加vGPU到虚拟机" \
+    "b" "创建授权服务器VM" \
+    "q" "返回主菜单" \
+    3>&1 1>&2 2>&3)
+    case "$OPTION" in
+    a ) deployvGPU;;
+    b ) setupLXC;;
+    q ) tput sgr 0
+      main;;
+    esac
+    tput sgr 0
   else # EN
+    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
+    1. Slicing to a vGPU profile requires license
+    2. vGPU unlocks everything, including CUDA + OpenCL
+    3. You need to deploy a license-VM in order to use vGPU profile
 
-    if (whiptail --title "Agreement" --yes-button "I Agree" --no-button "Go Back"  --yesno "
-    ----------------------------------------------------------------
-    Script may possible damaging your harware, use at your own risk.
-    I'll not take responible to what you have done in the next step.
-    Please do not use for commercial or any production environment.
-    Credits to vgpu_unlock github that make this happen.
-    ----------------------------------------------------------------
-    Auto assigning vGPU to VM
+    None-license-vGPU VM will get you poor performance, you lose all features
+    If you don't need CUDA, please use Quadro slice instead
 
-    This script will only automate the assigning process.
-    I will not provide any license info for this script.
-    Please either consulting with a professional for more license detail.
-    Or you could sign up a 90 day trials on nvidia website.
-    GL & HF to you guys :)
-
-    " 20 80) then vmidinput
-    else main
-    fi
-
+    Please select an option, enter to continue: " 30 80 3 \
+    "a" "Deploy vGPU profile to a VM" \
+    "b" "Deploy a VM for vGPU license server" \
+    "q" "Go back to Main Menu" \
+    3>&1 1>&2 2>&3)
+    case "$OPTION" in
+    a ) deployvGPU;;
+    b ) setupLXC;;
+    q ) tput sgr 0
+      main;;
+    esac
+    tput sgr 0
   fi
 }
 
@@ -1098,6 +1113,8 @@ resetDefaultvGPU(){
     sed -i '/vfio-pci,sysfsdev=/d' /etc/pve/qemu-server/*.conf
     sed -i '/mdev/d' /etc/pve/qemu-server/*.conf
     sed -i '/-uuid/d' /etc/pve/qemu-server/*.conf
+    sed -i '/#vGPU added/d' /etc/pve/qemu-server/*.conf
+    sed -i '/#Quadro uuid/d' /etc/pve/qemu-server/*.conf
     
     systemctl disable mdev-startup.service
     systemctl daemon-reload
@@ -1214,6 +1231,187 @@ checkNVlog(){
   main
 }
 
+ulimenu(){
+
+  beautifyLSCAT(){
+  echo "======================================================================="
+  echo "$(tput setaf 2)step 1 --> installing lsd + bat 正在安装美化程序...$(tput sgr 0)"
+  echo "======================================================================="
+  wget https://github.com/Peltoche/lsd/releases/download/0.20.1/lsd_0.20.1_amd64.deb
+  wget https://github.com/sharkdp/bat/releases/download/v0.18.1/bat_0.18.1_amd64.deb
+  dpkg -i lsd_0.20.1_amd64.deb && rm lsd_0.20.1_amd64.deb
+  dpkg -i bat_0.18.1_amd64.deb && rm bat_0.18.1_amd64.deb
+  if [ `grep "lsd" ~/.bashrc|wc -l` = 0 ];then
+  cat <<EOF >> ~/.bashrc
+alias ls='lsd'
+alias l='ls -l'
+alias ll='ls -l'
+alias la='ls -a'
+alias lla='ls -la'
+alias lt='ls --tree'
+alias cat='bat'
+EOF
+  else echo "$(tput setaf 2)√ Done lsd installed! 已添加ls环境变量$(tput sgr 0)"
+  fi
+  echo "======================================================================="
+  echo "$(tput setaf 2)Done! Please restart SSH! 搞定！请重启SSH，食用方式：ls，ll，la，l，cat$(tput sgr 0)"
+  echo "======================================================================="
+  }
+
+  installBPYTOP(){
+    echo "======================================================================="
+    echo "$(tput setaf 2)step 2 --> installing bpytop 正在安装bpytop...$(tput sgr 0)"
+    echo "======================================================================="
+    for app in python3-pip
+    do
+      if [ `dpkg -s $app|grep Status|wc -l` = 1 ]; then echo "$(tput setaf 2)√ 已安装$app$(tput sgr 0) Done installing $app"
+      else 
+        echo "$(tput setaf 1)× 未安装$app$(tput sgr 0)"
+        apt install -y $app
+      fi
+    done
+    pip3 install bpytop --upgrade
+
+    echo "======================================================================="
+    echo "$(tput setaf 2)Done! Please restart SSH! 搞定！请重启SSH，食用方式：bpytop$(tput sgr 0)"
+    echo "======================================================================="
+  }
+
+  passthroDisk(){ # credits to https://github.com/ivanhao/pvetools
+    list=`qm list|awk 'NR>1{print $1":"$2".................."$3" "}'`
+    echo -n "">lsvm
+    ls=`for i in $list;do echo $i|awk -F ":" '{print $1" "$2}'>>lsvm;done`
+    ls=`cat lsvm`
+    rm lsvm
+    h=`echo $ls|wc -l`
+    let h=$h*1
+    if [ $h -lt 30 ];then
+        h=30
+    fi
+    list1=`echo $list|awk 'NR>1{print $1}'`
+    vmid=$(whiptail  --title "vGPU Unlock Tools - Version : 0.0.3" --menu "
+    Choose vmid to set disk:
+    选择需要配置硬盘的vm：" 20 60 10 \
+        $(echo $ls) \
+        3>&1 1>&2 2>&3)
+        exitstatus=$?
+        if [ $exitstatus = 0 ]; then
+            if(whiptail --title "Yes/No" --yesno "
+    you choose: $vmid ,continue?
+    你选的是：$vmid ，是否继续?
+                " 10 60)then
+                while [ true ]
+                do
+                    if [ `echo "$vmid"|grep "^[0-9]*$"|wc -l` = 0 ];then
+                        whiptail --title "Warnning" --msgbox "
+    wrong format, please retype:
+    输入格式错误，请重新输入：
+                        " 10 60
+                        ulimenu
+                    else
+                        break
+                    fi
+                done
+                if [ $1 = 'add' ];then
+                    disks=`ls -alh /dev/disk/by-id|sed '/\.$/d'|sed '/^$/d'|awk 'NR>1{print $9" "$11" OFF"}'|sed 's/\.\.\///g'|sed '/wwn/d'|sed '/^dm/d'|sed '/lvm/d'|sed '/nvme-nvme/d'`
+                    d=$(whiptail --title "vGPU Unlock Tools - Version : 0.0.3" --checklist "
+    disk list:
+    已添加的硬盘:
+    $(cat /etc/pve/qemu-server/$vmid.conf|grep -E '^ide[0-9]|^scsi[0-9]|^sata[0-9]'|awk -F ":" '{print $1" "$2" "$3}')
+    -----------------------
+    Choose disk:
+    选择硬盘：" 30 90 10 \
+                    $(echo $disks) \
+                    3>&1 1>&2 2>&3)
+                    exitstatus=$?
+                    t=$(whiptail --title "vGPU Unlock Tools - Version : 0.0.3" --menu "
+    Choose disk type:
+    选择硬盘接口类型：" 20 60 10 \
+                    "sata" "vm sata type" \
+                    "scsi" "vm scsi type" \
+                    "ide" "vm ide type" \
+                    3>&1 1>&2 2>&3)
+                    exits=$?
+                    if [ $exitstatus = 0 ] && [ $exits = 0 ]; then
+                        did=`qm config $vmid|sed -n '/^'$t'/p'|awk -F ':' '{print $1}'|sort -u -r|grep '[0-9]*$' -o|awk 'NR==1{print $0}'`
+                        if [ $did ];then
+                            did=$((did+1))
+                        else
+                            did=0
+                        fi
+                        d=`echo $d|sed 's/\"//g'`
+                        for i in $d
+                        do
+                            if [ `cat /etc/pve/qemu-server/$vmid.conf|grep $i|wc -l` = 0 ];then
+                                if [ $t = "ide" ] && [ $did -gt 3 ];then
+                                    whiptail --title "Warnning" --msgbox "
+    ide is greate then 3, please select other types
+    ide的类型已经超过3个,请重选其他类型!" 10 60
+                                else
+                                    qm set $vmid --$t$did /dev/disk/by-id/$i
+                                fi
+                                sleep 1
+                                did=$((did+1))
+                            fi
+                        done
+                        whiptail --title "Success" --msgbox "Done.
+    配置完成" 10 60
+                        ulimenu
+                    else
+                        ulimenu
+                    fi
+                fi
+                if [ $1 = 'rm' ];then
+                    disks=`qm config $vmid|grep -E '^ide[0-9]|^scsi[0-9]|^sata[0-9]'|awk -F ":" '{print $1" "$2$3" OFF"}'`
+                    d=$(whiptail --title "vGPU Unlock Tools - Version : 0.0.3" --checklist "
+    Choose disk:
+    选择硬盘：" 20 90 10 \
+                    $(echo $disks) \
+                    3>&1 1>&2 2>&3)
+                    exitstatus=$?
+                    if [ $exitstatus = 0 ]; then
+                        for i in $d
+                        do
+                            i=`echo $i|sed 's/\"//g'`
+                            qm set $vmid --delete $i
+                        done
+                        whiptail --title "Success" --msgbox "Done.
+    配置完成" 10 60
+                        ulimenu
+                    else
+                        ulimenu
+                    fi
+                fi
+            else
+                ulimenu
+            fi
+        fi
+
+  }
+
+  if [ $L = "cn" ];then # CN
+    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
+    " 27 60 15 \
+    "a" "美化LS,CAT命令" \
+    "b" "安装bpytop" \
+    "c" "添加硬盘直通" \
+    "d" "取消硬盘直通" \
+    "q" "返回主菜单" \
+    3>&1 1>&2 2>&3)
+    else # EN
+    echo "en wip"
+  fi
+
+  case "$OPTION" in
+    a ) beautifyLSCAT;;
+    b ) installBPYTOP;;
+    c ) passthroDisk add;;
+    d ) passthroDisk rm;;
+    q ) main;;
+  esac
+  tput sgr 0
+}
+
 # --------------------------------------------------------- end module function --------------------------------------------------------- #
 
 main(){
@@ -1225,41 +1423,35 @@ main(){
 
   if [ $L = "cn" ];then
   OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
-  新装PVE请先运行步骤a，b，c
-  解锁成Quadro选d和e选项！解锁成vGPU选f和g选项！
+  新装PVE请先运行步骤a和b
+  请根据需求选择两个方案其中一个
   请勿同时混合使用这两种模式
-  请依照顺序选择配置，回车执行：" 27 60 15 \
+  依照顺序选择配置，回车执行：" 27 60 10 \
   "a" "更新系统" \
   "b" "解锁vGPU" \
-  "c" "美化系统" \
-  "d" "Quadro 切分(重切分)显存" \
-  "e" "Quadro 添加到VM" \
-  "f" "vGPU 添加到VM (需正版授权)" \
-  "g" "vGPU 授权服务器部署" \
-  "s" "查看当前状态" \
-  "r" "初始化vGPU状态" \
+  "c" "方案一：Quadro切分" \
+  "d" "方案二：vGPU切分" \
+  "s" "当前切分状态" \
+  "r" "重置所有设置" \
   "t" "实时硬件状态" \
   "v" "查看日志" \
+  "x" "实用工具" \
   "q" "退出程序" \
   3>&1 1>&2 2>&3)
   else
   OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
-  For fresh install PVE, run (a), (b), (c)first
-  Unlock to Quadro choose (d) and (e)
-  Unlock to vGPU choose (f) and (g)
-  Do not mix unlock type when using
-  Select options, enter to apply: " 28 60 15 \
+  For fresh install PVE, run (a), (b)first
+  Do not mix running opt1 and opt2 at the same time
+  Select options, enter to apply: " 28 60 10 \
   "a" "Update PVE" \
   "b" "Unlock vGPU" \
-  "c" "Beautify PVE" \
-  "d" "Change Quadro VRAM Size" \
-  "e" "Deploy Quadro to VM" \
-  "f" "Deploy vGPU to VM (licServer required)" \
-  "g" "Setup vGPU Licese Server" \
-  "s" "Current GPU Status" \
-  "r" "Reset all vGPU to default" \
-  "t" "Real time Hardware status" \
+  "c" "Opt1: Quadro Slice" \
+  "d" "Opt2: vGPU Slice" \
+  "s" "Current slice status" \
+  "r" "Reset to default" \
+  "t" "Real time info" \
   "v" "Check log" \
+  "x" "PVE tools" \
   "q" "Quit" \
   3>&1 1>&2 2>&3)
   fi
@@ -1267,15 +1459,13 @@ main(){
   case "$OPTION" in
   a ) startUpdate;;
   b ) startUnlock;;
-  c ) startBeautify;;
-  d ) chVram;;
-  e ) deployQuadro;;
-  f ) deployvGPU;;
-  g ) setupLXC;;
+  c ) QuadroMenu;;
+  d ) vGPUMenu;;
   s ) checkStatus;;
   r ) resetDefaultvGPU;;
   t ) realtimeHW;;
   v ) checkNVlog;;
+  x ) ulimenu;;
   q ) tput sgr 0
       exit;;
   esac
