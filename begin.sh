@@ -1004,7 +1004,7 @@ vGPUMenu(){
     2. vGPU unlocks everything, including CUDA + OpenCL
     3. You need to deploy a license-VM in order to use vGPU profile
 
-    None-license-vGPU VM will get you poor performance, you lose all features
+    You lose all features when running at none-license mode
     If you don't need CUDA, please use Quadro slice instead
 
     Please select an option, enter to continue: " 30 80 3 \
@@ -1391,6 +1391,7 @@ EOF
 
   if [ $L = "cn" ];then # CN
     OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
+    各类实用工具集合
     " 27 60 15 \
     "a" "美化LS,CAT命令" \
     "b" "安装bpytop" \
@@ -1399,7 +1400,15 @@ EOF
     "q" "返回主菜单" \
     3>&1 1>&2 2>&3)
     else # EN
-    echo "en wip"
+    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
+    Useful tools for PVE
+    " 27 60 15 \
+    "a" "Beautify LS, CAT command" \
+    "b" "Install bpytop" \
+    "c" "Passthrough disk to VM" \
+    "d" "Delete disk from VM" \
+    "q" "Go back to Main Menu" \
+    3>&1 1>&2 2>&3)
   fi
 
   case "$OPTION" in
