@@ -337,25 +337,36 @@ checkStatus(){
     float=$(($Vmemory / $Vnum))
   fi
 
-  # check which VM has vgpu
-  clear
-  echo -n "">lsvm
-  qm list|sed '1d'|awk '{print $1}'|while read line ; 
-  do 
+  {
+    echo 20
+    sleep 1
+    echo 60
+
+    # check which VM has vgpu
+    clear
+    echo -n "">lsvm
+    qm list|sed '1d'|awk '{print $1}'|while read line ; 
+    do 
     if [ ! `qm config $line | grep -E 'Quadro uuid|vGPU added' | wc -l` = 0 ];then
       echo $(qm config $line | grep 'name:' | awk '{print $2}') ID:$line >> lsvm
     fi
-  done
-  hasVGPU=`cat lsvm`
-  rm lsvm
+    done
+    hasVGPU=`cat lsvm`
+    rm lsvm
 
-  # check currently which unlock option
-  if [ -f /etc/systemd/system/mdev-startup.service ]; then unlockType="Quadro"
-  else unlockType="vGPU"
-  fi
+    # check currently which unlock option
+    if [ -f /etc/systemd/system/mdev-startup.service ]; then unlockType="Quadro"
+    else unlockType="vGPU"
+    fi
+
+    echo 100
+    sleep 0.5
+
+  } | whiptail --gauge "Checking status...正在检测..." 6 50 0
 
 
   if [[ $L = "cn" ]];then # CN
+  clear
   echo "$(tput setaf 2)=====================================================================
 - 物理显卡参数
 型号：$(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
@@ -384,6 +395,7 @@ $hasVGPU
 =======================================================================$(tput sgr 0)"
 
   else # EN
+  clear
   echo "$(tput setaf 2)=====================================================================
 - Graphic Card
 Type: $(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
