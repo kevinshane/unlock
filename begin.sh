@@ -337,53 +337,79 @@ checkStatus(){
     float=$(($Vmemory / $Vnum))
   fi
 
+  # check which VM has vgpu
+  clear
+  echo -n "">lsvm
+  qm list|sed '1d'|awk '{print $1}'|while read line ; 
+  do 
+    if [ ! `qm config $line | grep -E 'Quadro uuid|vGPU added' | wc -l` = 0 ];then
+      echo $(qm config $line | grep 'name:' | awk '{print $2}') ID:$line >> lsvm
+    fi
+  done
+  hasVGPU=`cat lsvm`
+  rm lsvm
+
+  # check currently which unlock option
+  if [ -f /etc/systemd/system/mdev-startup.service ]; then unlockType="Quadro"
+  else unlockType="vGPU"
+  fi
+
+
   if [[ $L = "cn" ]];then # CN
-  echo "$(tput setaf 2)  ===================================================================
-    - 物理显卡参数
-    型号：$(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
-    总线：$(nvidia-smi --query-gpu=gpu_bus_id --format=csv | sed -n '2p')
-    温度：$(nvidia-smi --query-gpu=temperature.gpu --format=csv | sed -n '2p')°C
-    功耗：$(nvidia-smi --query-gpu=power.draw --format=csv | sed -n '2p')
-    显存：$memory兆
+  echo "$(tput setaf 2)=====================================================================
+- 物理显卡参数
+型号：$(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
+总线：$(nvidia-smi --query-gpu=gpu_bus_id --format=csv | sed -n '2p')
+温度：$(nvidia-smi --query-gpu=temperature.gpu --format=csv | sed -n '2p')°C
+功耗：$(nvidia-smi --query-gpu=power.draw --format=csv | sed -n '2p')
+显存：$memory兆
 
-    - 切分建议
-    1）当切分为1G显存时，可同时运行$(($Vmemory / 1))台VM虚拟机
-    2）当切分为2G显存时，可同时运行$(($Vmemory / 2))台VM虚拟机
-    3）当切分为3G显存时，可同时运行$(($Vmemory / 3))台VM虚拟机
-    4）当切分为4G显存时，可同时运行$(($Vmemory / 4))台VM虚拟机
-    5）当切分为6G显存时，可同时运行$(($Vmemory / 6))台VM虚拟机
-    6）当切分为8G显存时，可同时运行$(($Vmemory / 8))台VM虚拟机
+- 切分小贴士
+1）当切分为1G显存时，可同时运行$(($Vmemory / 1))台VM虚拟机
+2）当切分为2G显存时，可同时运行$(($Vmemory / 2))台VM虚拟机
+3）当切分为3G显存时，可同时运行$(($Vmemory / 3))台VM虚拟机
+4）当切分为4G显存时，可同时运行$(($Vmemory / 4))台VM虚拟机
+5）当切分为6G显存时，可同时运行$(($Vmemory / 6))台VM虚拟机
+6）当切分为8G显存时，可同时运行$(($Vmemory / 8))台VM虚拟机
 
-    - 当前切分状态
-    切分型号：$currentType
-    切分显存："$Vnum"G
-    可供使用的vGPU数量：$float个
-                                                                -- by ksh
-  =======================================================================$(tput sgr 0)"
+- 当前切分状态
+切分型号：$currentType
+切分显存："$Vnum"G
+解锁类型：$unlockType
+可供使用的vGPU数量：$float个
+
+- 以下VM正在使用切分：
+$hasVGPU
+                                                              -- by ksh
+=======================================================================$(tput sgr 0)"
 
   else # EN
-  echo "$(tput setaf 2)  ===================================================================
-    - Graphic Card
-    Type: $(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
-    BusID: $(nvidia-smi --query-gpu=gpu_bus_id --format=csv | sed -n '2p')
-    Temp: $(nvidia-smi --query-gpu=temperature.gpu --format=csv | sed -n '2p')°C
-    Power: $(nvidia-smi --query-gpu=power.draw --format=csv | sed -n '2p')
-    Vram: $memory Mib
+  echo "$(tput setaf 2)=====================================================================
+- Graphic Card
+Type: $(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
+BusID: $(nvidia-smi --query-gpu=gpu_bus_id --format=csv | sed -n '2p')
+Temp: $(nvidia-smi --query-gpu=temperature.gpu --format=csv | sed -n '2p')°C
+Power: $(nvidia-smi --query-gpu=power.draw --format=csv | sed -n '2p')
+Vram: $memory Mib
 
-    - Slice Tips
-    1) When slicing to 1G Vram, it can run up to $(($Vmemory / 1)) VM simultaneously
-    2) When slicing to 2G Vram, it can run up to $(($Vmemory / 2)) VM simultaneously
-    3) When slicing to 3G Vram, it can run up to $(($Vmemory / 3)) VM simultaneously
-    4) When slicing to 4G Vram, it can run up to $(($Vmemory / 4)) VM simultaneously
-    5) When slicing to 6G Vram, it can run up to $(($Vmemory / 6)) VM simultaneously
-    6) When slicing to 8G Vram, it can run up to $(($Vmemory / 8)) VM simultaneously
+- Slice Tips
+1) When slicing to 1G Vram, it can run up to $(($Vmemory / 1)) VM simultaneously
+2) When slicing to 2G Vram, it can run up to $(($Vmemory / 2)) VM simultaneously
+3) When slicing to 3G Vram, it can run up to $(($Vmemory / 3)) VM simultaneously
+4) When slicing to 4G Vram, it can run up to $(($Vmemory / 4)) VM simultaneously
+5) When slicing to 6G Vram, it can run up to $(($Vmemory / 6)) VM simultaneously
+6) When slicing to 8G Vram, it can run up to $(($Vmemory / 8)) VM simultaneously
 
-    - vGPU slicing status
-    Sliced type: $currentType
-    Sliced vRam: "$Vnum"G
-    Current Available Count: $float
-                                                                -- by ksh
-  =======================================================================$(tput sgr 0)" 
+- vGPU slicing status
+Sliced type: $currentType
+Sliced vRam: "$Vnum"G
+Unlock type: $unlockType
+Current Available Count: $float
+
+- Which VM has vGPU
+$hasVGPU
+                                                              -- by ksh
+=======================================================================$(tput sgr 0)"
   fi
 }
 
