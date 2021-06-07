@@ -337,36 +337,25 @@ checkStatus(){
     float=$(($Vmemory / $Vnum))
   fi
 
-  {
-    echo 20
-    sleep 1
-    echo 60
+  # check which VM has vgpu
+  clear
+  echo "Checking status... 正在检测，请稍等片刻"
+  echo -n "">lsvm
+  qm list|sed '1d'|awk '{print $1}'|while read line ; 
+  do 
+  if [ ! `qm config $line | grep -E 'Quadro uuid|vGPU added' | wc -l` = 0 ];then
+    echo $(qm config $line | grep 'name:' | awk '{print $2}') ID:$line >> lsvm
+  fi
+  done
+  hasVGPU=`cat lsvm`
+  rm lsvm
 
-    # check which VM has vgpu
-    clear
-    echo -n "">lsvm
-    qm list|sed '1d'|awk '{print $1}'|while read line ; 
-    do 
-    if [ ! `qm config $line | grep -E 'Quadro uuid|vGPU added' | wc -l` = 0 ];then
-      echo $(qm config $line | grep 'name:' | awk '{print $2}') ID:$line >> lsvm
-    fi
-    done
-    hasVGPU=`cat lsvm`
-    rm lsvm
-
-    # check currently which unlock option
-    if [ -f /etc/systemd/system/mdev-startup.service ]; then unlockType="Quadro"
-    else unlockType="vGPU"
-    fi
-
-    echo 100
-    sleep 0.5
-
-  } | whiptail --gauge "Checking status...正在检测..." 6 50 0
-
+  # check currently which unlock option
+  if [ -f /etc/systemd/system/mdev-startup.service ]; then unlockType="Quadro"
+  else unlockType="vGPU"
+  fi
 
   if [[ $L = "cn" ]];then # CN
-  clear
   echo "$(tput setaf 2)=====================================================================
 - 物理显卡参数
 型号：$(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
@@ -395,7 +384,6 @@ $hasVGPU
 =======================================================================$(tput sgr 0)"
 
   else # EN
-  clear
   echo "$(tput setaf 2)=====================================================================
 - Graphic Card
 Type: $(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
@@ -1427,6 +1415,30 @@ EOF
 
   }
 
+  extraGrubsettings(){
+    # hugepagesz=2MB nvme_core.io_timeout=2 nvme.poll_queues=12 max_host_mem_size_mb=512 nvme.io_poll=0 nvme.io_poll_delay=0 
+    # pcie_acs_override=downstream,multifunction vfio_iommu_type1.allow_unsafe_interrupts=1
+
+    if [ `grep "pcie_acs_override" /etc/default/grub | wc -l` = 0 ];then
+    sed -i 's#iommu=pt#iommu=pt pcie_acs_override=downstream,multifunction vfio_iommu_type1.allow_unsafe_interrupts=1#' /etc/default/grub && update-grub
+    echo "$(tput setaf 2)√ Done Extra IOMMU! Please reboot! 已开启额外IOMMU参数，请重新启动！$(tput sgr 0)"
+    else echo "$(tput setaf 2)√ Extra IOMMU already satisfied! 已有额外IOMMU参数，无需设置！ √$(tput sgr 0)"
+    fi
+  }
+
+  unlockFPS(){
+    echo "$(tput setaf 2)Not recommanded! Use at your own risk! 不推荐解锁FPS！请自行斟酌！$(tput sgr 0)"
+    echo "options nvidia NVreg_RegistryDwords="RmPVMRL=0x01"" >> /etc/modprobe.d/nvidia.conf
+    update-initramfs -u
+    echo "$(tput setaf 2)√ Done unlock FPS! Please reboot! 已解锁FPS限制，请重启！ √$(tput sgr 0)"
+  }
+
+  undoFPS(){
+    rm /etc/modprobe.d/nvidia.conf
+    update-initramfs -u
+    echo "$(tput setaf 2)√ Done undo FPS! Please reboot! 已恢复FPS限制，请重启！ √$(tput sgr 0)"
+  }
+
   if [ $L = "cn" ];then # CN
     OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
     各类实用工具集合
@@ -1435,6 +1447,9 @@ EOF
     "b" "安装bpytop" \
     "c" "添加硬盘直通" \
     "d" "取消硬盘直通" \
+    "e" "完全拆分IOMMU组(慎用)" \
+    "f" "解锁帧率限制(慎用)" \
+    "g" "恢复帧率限制" \
     "q" "返回主菜单" \
     3>&1 1>&2 2>&3)
     else # EN
@@ -1445,6 +1460,9 @@ EOF
     "b" "Install bpytop" \
     "c" "Passthrough disk to VM" \
     "d" "Delete disk from VM" \
+    "e" "Complete break down IOMMU group" \
+    "f" "Unlock vGPU FPS" \
+    "g" "Undo vGPU FPS" \
     "q" "Go back to Main Menu" \
     3>&1 1>&2 2>&3)
   fi
@@ -1454,6 +1472,9 @@ EOF
     b ) installBPYTOP;;
     c ) passthroDisk add;;
     d ) passthroDisk rm;;
+    e ) extraGrubsettings;;
+    f ) unlockFPS;;
+    g ) undoFPS;;
     q ) main;;
   esac
   tput sgr 0
