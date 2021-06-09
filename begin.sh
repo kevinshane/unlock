@@ -1439,6 +1439,14 @@ EOF
     echo "$(tput setaf 2)√ Done undo FPS! Please reboot! 已恢复FPS限制，请重启！ √$(tput sgr 0)"
   }
 
+  fixTimeOut(){
+    if [ `grep "hugepagesz" /etc/default/grub | wc -l` = 0 ];then
+    sed -i 's#iommu=pt#iommu=pt hugepagesz=2MB nvme_core.io_timeout=2 nvme.poll_queues=12 max_host_mem_size_mb=512 nvme.io_poll=0 nvme.io_poll_delay=0#' /etc/default/grub && update-grub
+    echo "$(tput setaf 2)√ Done fixing! Please reboot! 已尝试修复，请重新启动！$(tput sgr 0)"
+    else echo "$(tput setaf 2)√ Already fixed! Skiped! 已修复过，无需设置！$(tput sgr 0)"
+    fi
+  }
+
   if [ $L = "cn" ];then # CN
     OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
     各类实用工具集合
@@ -1450,6 +1458,7 @@ EOF
     "e" "完全拆分IOMMU组(慎用)" \
     "f" "解锁帧率限制(慎用)" \
     "g" "恢复帧率限制" \
+    "h" "尝试修复timeout waiting on systemd" \
     "q" "返回主菜单" \
     3>&1 1>&2 2>&3)
     else # EN
@@ -1463,6 +1472,7 @@ EOF
     "e" "Complete break down IOMMU group" \
     "f" "Unlock vGPU FPS" \
     "g" "Undo vGPU FPS" \
+    "h" "Fix timeout waiting on systemd" \
     "q" "Go back to Main Menu" \
     3>&1 1>&2 2>&3)
   fi
@@ -1475,6 +1485,7 @@ EOF
     e ) extraGrubsettings;;
     f ) unlockFPS;;
     g ) undoFPS;;
+    h ) fixTimeOut;;
     q ) main;;
   esac
   tput sgr 0
@@ -1491,10 +1502,8 @@ main(){
 
   if [ $L = "cn" ];then
   OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
-  新装PVE请先运行步骤a和b
-  请根据需求选择两个方案其中一个
-  请勿同时混合使用这两种模式
-  依照顺序选择配置，回车执行：" 27 60 10 \
+  新装PVE请务必先执行步骤a和b
+  根据需求选择c和d其中之一，请勿同时混用两种方案" 27 60 10 \
   "a" "更新系统" \
   "b" "解锁vGPU" \
   "c" "方案一：Quadro切分" \
@@ -1508,9 +1517,8 @@ main(){
   3>&1 1>&2 2>&3)
   else
   OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
-  For fresh install PVE, run (a), (b)first
-  Do not mix running opt1 and opt2 at the same time
-  Select options, enter to apply: " 28 60 10 \
+  For fresh install PVE, run step a and b first
+  Do not mix running opt1 and opt2 at the same time" 28 60 10 \
   "a" "Update PVE" \
   "b" "Unlock vGPU" \
   "c" "Opt1: Quadro Slice" \
