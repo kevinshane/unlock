@@ -1594,8 +1594,8 @@ EOF
     c ) diskMenu;;
     d ) extraGrubsettings;;
     e ) unlockFPSmenu;;
-    f ) unlockFPS;;
-    g ) undoFPS;;
+    f ) fixTimeOut;;
+    g ) reinstallDriver;;
     h ) fixTimeOut;;
     i ) reinstallDriver;;
     q ) main;;
