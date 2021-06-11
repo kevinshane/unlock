@@ -1499,6 +1499,9 @@ EOF
       if [ $1 = '45089' ];then
         driver="450.89"
       fi
+      if [ $1 = '450124' ];then
+        driver="450.124"
+      fi
       if [ $1 = '460' ];then
         driver="460.32.04"
       fi
@@ -1553,14 +1556,16 @@ EOF
     "u" "Uninstall --- Current:$currentDriver 请先卸载当前版本" \
     "a" "450.80 ------ Better OpenGL  更优秀的OpenGL性能" \
     "b" "450.89 ------ Balanced Perf  较新的版本" \
-    "c" "460.32.04 --- Latest Version 受支持的最高版本" \
+    "c" "450.124 ----- Fix timeout    较新的版本修复Timeout" \
+    "d" "460.32.04 --- Latest Version 受支持的最高版本" \
     "q" "Go back to X Menu ---------- 返回工具菜单" \
     3>&1 1>&2 2>&3)
     case "$OPTION" in
     u ) uninstallDriver;;
     a ) insDriver 450;;
     b ) insDriver 45089;;
-    c ) insDriver 460;;
+    c ) insDriver 450124;;
+    d ) insDriver 460;;
     q ) ulimenu;;
     esac
   }
@@ -1572,8 +1577,7 @@ EOF
     "c" "添加/删除 硬盘直通" \
     "d" "完全拆分IOMMU组(慎用)" \
     "e" "vGPU帧率解锁" \
-    "f" "尝试修复timeout waiting on systemd" \
-    "g" "安装其他版本的宿主机驱动" \
+    "f" "安装其他版本的宿主机驱动" \
     "q" "返回主菜单" \
     3>&1 1>&2 2>&3)
     else # EN
@@ -1583,8 +1587,7 @@ EOF
     "c" "Passthrough/Remove disk to VM" \
     "d" "Complete break down IOMMU group" \
     "e" "vGPU FPS unlock" \
-    "f" "Fix timeout waiting on systemd" \
-    "g" "Install different host driver" \
+    "f" "Install different host driver" \
     "q" "Go back to Main Menu" \
     3>&1 1>&2 2>&3)
   fi
@@ -1595,10 +1598,7 @@ EOF
     c ) diskMenu;;
     d ) extraGrubsettings;;
     e ) unlockFPSmenu;;
-    f ) fixTimeOut;;
-    g ) reinstallDriver;;
-    h ) fixTimeOut;;
-    i ) reinstallDriver;;
+    f ) reinstallDriver;;
     q ) main;;
   esac
   tput sgr 0
