@@ -148,8 +148,8 @@ startUnlock(){
   runUnlock(){
     cd /root/
     # driver="440.87"
-    # driver="450.80"
-    driver="460.32.04"
+    driver="450.80"
+    # driver="460.32.04"
 
     # install apps
     echo "======================================================================="
@@ -322,6 +322,11 @@ EOF
 }
 
 checkStatus(){
+
+  # ref
+  # nvidia-smi --query-gpu=timestamp,name,pci.bus_id,driver_version,pstate,pcie.link.gen.max,
+  # pcie.link.gen.current,temperature.gpu,utilization.gpu,utilization.memory,memory.total,memory.free,memory.used --format=csv  
+
   memory=$(nvidia-smi --query-gpu=memory.total --format=csv | awk '/^memory/ {getline; print}' | awk '{print $1}')
 
   # check if currently has sliced mdev, if returns a list, then no sliced mdev
@@ -345,6 +350,7 @@ checkStatus(){
   do 
   if [ ! `qm config $line | grep -E 'Quadro uuid|vGPU added' | wc -l` = 0 ];then
     echo $(qm config $line | grep 'name:' | awk '{print $2}') ID:$line >> lsvm
+    echo "$line"
   fi
   done
   hasVGPU=`cat lsvm`
@@ -358,6 +364,7 @@ checkStatus(){
   if [[ $L = "cn" ]];then # CN
   echo "$(tput setaf 2)=====================================================================
 - 物理显卡参数
+驱动：$(nvidia-smi --query-gpu=driver_version --format=csv | sed -n '2p')
 型号：$(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
 总线：$(nvidia-smi --query-gpu=gpu_bus_id --format=csv | sed -n '2p')
 温度：$(nvidia-smi --query-gpu=temperature.gpu --format=csv | sed -n '2p')°C
@@ -382,10 +389,10 @@ checkStatus(){
 $hasVGPU
                                                               -- by ksh
 =======================================================================$(tput sgr 0)"
-
-  else # EN
-  echo "$(tput setaf 2)=====================================================================
+else # EN
+echo "$(tput setaf 2)=====================================================================
 - Graphic Card
+Version: $(nvidia-smi --query-gpu=driver_version --format=csv | sed -n '2p')
 Type: $(nvidia-smi --query-gpu=gpu_name --format=csv | sed -n '2p')
 BusID: $(nvidia-smi --query-gpu=gpu_bus_id --format=csv | sed -n '2p')
 Temp: $(nvidia-smi --query-gpu=temperature.gpu --format=csv | sed -n '2p')°C
@@ -410,7 +417,7 @@ Current Available Count: $float
 $hasVGPU
                                                               -- by ksh
 =======================================================================$(tput sgr 0)"
-  fi
+fi
 }
 
 chVram(){
@@ -1303,6 +1310,20 @@ EOF
     echo "======================================================================="
   }
 
+  diskMenu(){
+    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
+    Configure disk passthrough to VM. 设置物理硬盘直通" 12 60 3 \
+    "a" "Disk passthrough ----- 添加硬盘直通" \
+    "b" "Remove passthrough --- 删除硬盘直通 " \
+    "q" "Go back to MainMenu -- 返回主菜单" \
+    3>&1 1>&2 2>&3)
+    case "$OPTION" in
+    a ) passthroDisk add;;
+    b ) passthroDisk rm;;
+    q ) ulimenu;;
+    esac
+  }
+
   passthroDisk(){ # credits to https://github.com/ivanhao/pvetools
     list=`qm list|awk 'NR>1{print $1":"$2".................."$3" "}'`
     echo -n "">lsvm
@@ -1426,6 +1447,20 @@ EOF
     fi
   }
 
+  unlockFPSmenu(){
+    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
+    Configure vGPU FPS unlock to VM. 解除FPS帧率限制" 12 60 3 \
+    "a" "Unlock FPS ----------- 解除60帧限制" \
+    "b" "Undo FPS ------------- 恢复限制 " \
+    "q" "Go back to MainMenu -- 返回主菜单" \
+    3>&1 1>&2 2>&3)
+    case "$OPTION" in
+    a ) unlockFPS;;
+    b ) undoFPS;;
+    q ) ulimenu;;
+    esac
+  }
+
   unlockFPS(){
     echo "$(tput setaf 2)Not recommanded! Use at your own risk! 不推荐解锁FPS！请自行斟酌！$(tput sgr 0)"
     echo "options nvidia NVreg_RegistryDwords="RmPVMRL=0x01"" >> /etc/modprobe.d/nvidia.conf
@@ -1447,32 +1482,108 @@ EOF
     fi
   }
 
+  reinstallDriver(){
+    currentDriver=$(nvidia-smi --query-gpu=driver_version --format=csv | sed -n '2p')
+
+    uninstallDriver(){
+      /root/NVIDIA-Linux-x86_64-$currentDriver-vgpu-kvm.run --uninstall
+      echo "$(tput setaf 2)Done uninstall driver, please reboot! 已卸载完毕，请重启！"
+      echo "After reboot please run script again! 重启完毕后重新运行脚本选择你想要安装的版本！$(tput setaf 0)"
+    }
+
+    insDriver(){
+      if [ $1 = '450' ];then
+        driver="450.80"
+      fi
+      if [ $1 = '45089' ];then
+        driver="450.89"
+      fi
+      if [ $1 = '460' ];then
+        driver="460.32.04"
+      fi
+
+      # Install driver
+      echo "======================================================================="
+      echo "$(tput setaf 2)installing Nvidia $driver Driver... 正在安装原版$driver显卡驱动程序$(tput sgr 0)"
+      echo "======================================================================="
+      cd /root/
+      if test -f "NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run";then 
+      chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
+      else
+      wget https://github.com/kevinshane/unlock/raw/master/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
+      fi
+
+      # modify driver
+      if [ `grep "vgpu_unlock_hooks.c" /usr/src/nvidia-$driver/nvidia/os-interface.c|wc -l` = 0 ];then
+        sed -i '20a#include "/root/vgpu_unlock/vgpu_unlock_hooks.c"' /usr/src/nvidia-$driver/nvidia/os-interface.c
+      fi
+      if [ `grep "kern.ld" /usr/src/nvidia-$driver/nvidia/nvidia.Kbuild|wc -l` = 0 ];then
+        echo "ldflags-y += -T /root/vgpu_unlock/kern.ld" >> /usr/src/nvidia-$driver/nvidia/nvidia.Kbuild
+      fi
+      if [ `grep "vgpu_unlock" /lib/systemd/system/nvidia-vgpud.service|wc -l` = 0 ];then
+        sed -i 's#ExecStart=#ExecStart=/root/vgpu_unlock/vgpu_unlock #' /lib/systemd/system/nvidia-vgpud.service
+      fi
+      if [ `grep "vgpu_unlock" /lib/systemd/system/nvidia-vgpu-mgr.service|wc -l` = 0 ];then
+        sed -i 's#ExecStart=#ExecStart=/root/vgpu_unlock/vgpu_unlock #' /lib/systemd/system/nvidia-vgpu-mgr.service
+      fi
+
+      # reaload daemon
+      systemctl daemon-reload
+
+      # remove and reinstall driver
+      echo "======================================================================="
+      echo "$(tput setaf 2)reconfiguring driver... 正在重新构建驱动$(tput sgr 0)"
+      echo "======================================================================="
+      dkms remove  -m nvidia -v $driver --all
+      dkms install -m nvidia -v $driver
+
+      echo "$(tput setaf 2)======================================================================="
+      echo "Done! Please reboot! 搞定！请重启PVE！"
+      echo "                                                                 by ksh"
+      echo "======================================================================="
+      tput sgr 0
+
+    }
+    
+    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "Current Version is $currentDriver! 当前驱动版本$currentDriver！" 15 65 6 \
+    "u" "Uninstall --- Current:$currentDriver 请先卸载当前版本" \
+    "a" "450.80 ------ Better OpenGL  更优秀的OpenGL性能" \
+    "b" "450.89 ------ Balanced Perf  较新的版本" \
+    "c" "460.32.04 --- Latest Version 受支持的最高版本" \
+    "q" "Go back to X Menu ---------- 返回工具菜单" \
+    3>&1 1>&2 2>&3)
+    case "$OPTION" in
+    u ) uninstallDriver;;
+    a ) insDriver 450;;
+    b ) insDriver 45089;;
+    c ) insDriver 460;;
+    q ) ulimenu;;
+    esac
+  }
+
   if [ $L = "cn" ];then # CN
-    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
-    各类实用工具集合
-    " 27 60 15 \
+    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "各类实用工具集合" 16 60 8 \
     "a" "美化LS,CAT命令" \
     "b" "安装bpytop" \
-    "c" "添加硬盘直通" \
-    "d" "取消硬盘直通" \
-    "e" "完全拆分IOMMU组(慎用)" \
-    "f" "解锁帧率限制(慎用)" \
-    "g" "恢复帧率限制" \
-    "h" "尝试修复timeout waiting on systemd" \
+    "c" "添加/删除 硬盘直通" \
+    "d" "完全拆分IOMMU组(慎用)" \
+    "e" "vGPU帧率解锁" \
+    "f" "尝试修复timeout waiting on systemd" \
+    "g" "安装其他版本的宿主机驱动" \
     "q" "返回主菜单" \
     3>&1 1>&2 2>&3)
     else # EN
-    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
-    Useful tools for PVE
-    " 27 60 15 \
+    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "Useful tools for PVE" 16 60 8 \
     "a" "Beautify LS, CAT command" \
     "b" "Install bpytop" \
-    "c" "Passthrough disk to VM" \
-    "d" "Delete disk from VM" \
-    "e" "Complete break down IOMMU group" \
-    "f" "Unlock vGPU FPS" \
-    "g" "Undo vGPU FPS" \
-    "h" "Fix timeout waiting on systemd" \
+    "c" "Passthrough/Remove disk to VM" \
+    "d" "Complete break down IOMMU group" \
+    "e" "vGPU FPS unlock" \
+    "f" "Fix timeout waiting on systemd" \
+    "g" "Install different host driver" \
     "q" "Go back to Main Menu" \
     3>&1 1>&2 2>&3)
   fi
@@ -1480,12 +1591,13 @@ EOF
   case "$OPTION" in
     a ) beautifyLSCAT;;
     b ) installBPYTOP;;
-    c ) passthroDisk add;;
-    d ) passthroDisk rm;;
-    e ) extraGrubsettings;;
+    c ) diskMenu;;
+    d ) extraGrubsettings;;
+    e ) unlockFPSmenu;;
     f ) unlockFPS;;
     g ) undoFPS;;
     h ) fixTimeOut;;
+    i ) reinstallDriver;;
     q ) main;;
   esac
   tput sgr 0
@@ -1503,7 +1615,7 @@ main(){
   if [ $L = "cn" ];then
   OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
   新装PVE请务必先执行步骤a和b
-  根据需求选择c和d其中之一，请勿同时混用两种方案" 27 60 10 \
+  根据需求选择c和d其中之一，请勿同时混用两种方案" 20 60 10 \
   "a" "更新系统" \
   "b" "解锁vGPU" \
   "c" "方案一：Quadro切分" \
@@ -1518,7 +1630,7 @@ main(){
   else
   OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
   For fresh install PVE, run step a and b first
-  Do not mix running opt1 and opt2 at the same time" 28 60 10 \
+  Do not mix running opt1 and opt2 at the same time" 20 60 10 \
   "a" "Update PVE" \
   "b" "Unlock vGPU" \
   "c" "Opt1: Quadro Slice" \
