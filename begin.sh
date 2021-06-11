@@ -145,10 +145,11 @@ startUpdate(){
 }
 
 startUnlock(){
-  runUnlock(){
+  runPythonUnlock(){ # Original python frida unlock
     cd /root/
     # driver="440.87"
-    driver="450.80"
+    # driver="450.80"
+    driver="450.124"
     # driver="460.32.04"
 
     # install apps
@@ -181,7 +182,8 @@ startUnlock(){
       chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
       /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
       else
-      wget https://github.com/kevinshane/unlock/raw/master/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      # wget https://github.com/kevinshane/unlock/raw/master/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      wget https://f000.backblazeb2.com/file/vGPUdrivers/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run -P /root/
       chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
       /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
     fi
@@ -264,7 +266,131 @@ EOF
     echo "                                                                 by ksh"
     echo "======================================================================="
     tput sgr 0
-  }
+}
+
+  runCversionUnlock(){ # Thanks Mengsk and his work https://gist.github.com/HiFiPhile/b3267ce1e93f15642ce3943db6e60776
+    cd /root/
+    # driver="440.87"
+    # driver="450.80"
+    driver="450.124"
+    # driver="460.32.04"
+
+    # install apps
+    echo "======================================================================="
+    echo "$(tput setaf 2)installing apps... 正在安装必要软件$(tput sgr 0)"
+    echo "======================================================================="
+    for app in build-essential dkms pve-headers git python3-pip jq
+    do
+      if [ `dpkg -s $app|grep Status|wc -l` = 1 ]; then echo "$(tput setaf 2)√ Already installed $app! 已安装$app$(tput sgr 0)"
+      else 
+        echo "$(tput setaf 1)× You don't have $app install! 未安装$app$(tput sgr 0)"
+        echo "$(tput setaf 2)installing $app! 正在安装$app$(tput sgr 0)"
+        apt install -y $app
+        echo "$(tput setaf 2)√ Done $app installed! 已安装$app$(tput sgr 0)"
+      fi
+    done
+
+    # Install driver
+    echo "======================================================================="
+    echo "$(tput setaf 2)installing Nvidia $driver Driver... 正在安装原版$driver显卡驱动程序$(tput sgr 0)"
+    echo "======================================================================="
+    cd /root/
+    if test -f "NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run";then 
+      chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
+      else
+      # wget https://github.com/kevinshane/unlock/raw/master/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      wget https://f000.backblazeb2.com/file/vGPUdrivers/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run -P /root/
+      chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
+    fi
+
+    # install vgpu_unlock
+    echo "======================================================================="
+    echo "$(tput setaf 2)unlocking... 正在解锁$(tput sgr 0)"
+    echo "======================================================================="
+    cd /root
+    if [ ! -d "/root/vgpu_unlock" ];then 
+      git clone https://github.com/DualCoder/vgpu_unlock.git && chmod -R +x /root/vgpu_unlock/
+    else echo "$(tput setaf 2)√ Done cloned unlock! 已下载unlock$(tput sgr 0)"
+    fi
+
+    # building c version
+    cd /root
+    wget https://gist.githubusercontent.com/HiFiPhile/b3267ce1e93f15642ce3943db6e60776/raw/6482897a3b15e4ada56e37afbb5d1f1ca37b9692/cvgpu.c -P /root/
+    gcc -fPIC -shared -o cvgpu.o cvgpu.c
+    rm cvgpu.c
+
+    # modify driver
+    if [ `grep "vgpu_unlock_hooks.c" /usr/src/nvidia-$driver/nvidia/os-interface.c|wc -l` = 0 ];then
+      sed -i '20a#include "/root/vgpu_unlock/vgpu_unlock_hooks.c"' /usr/src/nvidia-$driver/nvidia/os-interface.c
+    fi
+    if [ `grep "kern.ld" /usr/src/nvidia-$driver/nvidia/nvidia.Kbuild|wc -l` = 0 ];then
+      echo "ldflags-y += -T /root/vgpu_unlock/kern.ld" >> /usr/src/nvidia-$driver/nvidia/nvidia.Kbuild
+    fi
+
+    # adding LD_PRELOAD env to services
+    if [ `grep "LD_PRELOAD" /lib/systemd/system/nvidia-vgpud.service|wc -l` = 0 ];then
+      sed -i '14aEnvironment="LD_PRELOAD=/root/cvgpu.o"' /lib/systemd/system/nvidia-vgpud.service
+    fi
+    if [ `grep "LD_PRELOAD" /lib/systemd/system/nvidia-vgpu-mgr.service|wc -l` = 0 ];then
+      sed -i '14aEnvironment="LD_PRELOAD=/root/cvgpu.o"' /lib/systemd/system/nvidia-vgpu-mgr.service
+    fi
+
+    # reaload daemon
+    systemctl daemon-reload
+
+    # remove and reinstall driver
+    echo "======================================================================="
+    echo "$(tput setaf 2)reconfiguring driver... 正在重新构建驱动$(tput sgr 0)"
+    echo "======================================================================="
+    dkms remove  -m nvidia -v $driver --all
+    dkms install -m nvidia -v $driver
+
+    # install mdev
+    echo "======================================================================="
+    echo "$(tput setaf 2)installing mdev... 正在安装mdev设备$(tput sgr 0)"
+    echo "======================================================================="
+    cd /root
+    if [ -x /usr/sbin/mdevctl ];then echo "$(tput setaf 2)√ mdev installed! 已安装mdev$(tput sgr 0)"
+    else
+    git clone https://github.com/mdevctl/mdevctl.git
+    cd mdevctl
+    make install
+    fi
+
+  # adding 11 uuid to env
+  if [ `grep "AAA" /etc/environment|wc -l` = 0 ];then
+    cat <<EOF >> /etc/environment
+export AAA=$AAA
+export BBB=$BBB
+export CCC=$CCC
+export DDD=$DDD
+export EEE=$EEE
+export FFF=$FFF
+export GGG=$GGG
+export HHH=$HHH
+export III=$III
+export JJJ=$JJJ
+export KKK=$KKK
+EOF
+    else echo "$(tput setaf 2)√ Done setup 11 UUID env! 已添加总共11个UUID环境变量$(tput sgr 0)"
+    fi
+
+    # adding vgpu command
+    if [ `grep "vgpu" ~/.bashrc|wc -l` = 0 ];then
+      echo "alias vgpu='/root/vgpu_unlock/scripts/vgpu-name.sh -p ALL'" >> ~/.bashrc
+    else echo "$(tput setaf 2)√ Done vgpu command! 已设置vgpu命令$(tput sgr 0)"
+    fi
+
+    echo "======================================================================="
+    echo "$(tput setaf 2)Done! Please reboot!"
+    echo "after reboot, you can run <vgpu> to list all support vgpu"
+    echo "搞定！请重启PVE！重启后可以运行vgpu查看所有支持的型号"
+    echo "                                                                 by ksh"
+    echo "======================================================================="
+    tput sgr 0
+}
   # https://cloud.google.com/compute/docs/gpus/grid-drivers-table
   # google direct download 其他驱动版本下载，请自行下载测试
   # https://storage.googleapis.com/nvidiaowo/NVIDIA-GRID-Linux-KVM-450.89-452.57.zip
@@ -291,7 +417,7 @@ EOF
 
     请认真阅读以上条款，同意回车继续，不同意请退出
 
-    " 26 80) then runUnlock
+    " 26 80) then runCversionUnlock
     else main
     fi
     else
@@ -314,7 +440,7 @@ EOF
 
     Agree to continue, disagree to go back to main menu
 
-    " 26 80) then runUnlock
+    " 26 80) then runCversionUnlock
     else main
     fi
   fi
@@ -1515,7 +1641,8 @@ EOF
       chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
       /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
       else
-      wget https://github.com/kevinshane/unlock/raw/master/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      # wget https://github.com/kevinshane/unlock/raw/master/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
+      wget https://f000.backblazeb2.com/file/vGPUdrivers/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run -P /root/
       chmod +x /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run
       /root/NVIDIA-Linux-x86_64-$driver-vgpu-kvm.run --dkms
       fi
