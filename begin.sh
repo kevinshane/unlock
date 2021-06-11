@@ -1475,11 +1475,12 @@ EOF
   }
 
   fixTimeOut(){
-    if [ `grep "hugepagesz" /etc/default/grub | wc -l` = 0 ];then
-    sed -i 's#iommu=pt#iommu=pt hugepagesz=2MB nvme_core.io_timeout=2 nvme.poll_queues=12 max_host_mem_size_mb=512 nvme.io_poll=0 nvme.io_poll_delay=0#' /etc/default/grub && update-grub
-    echo "$(tput setaf 2)√ Done fixing! Please reboot! 已尝试修复，请重新启动！$(tput sgr 0)"
-    else echo "$(tput setaf 2)√ Already fixed! Skiped! 已修复过，无需设置！$(tput sgr 0)"
-    fi
+    # if [ `grep "hugepagesz" /etc/default/grub | wc -l` = 0 ];then
+    # sed -i 's#iommu=pt#iommu=pt hugepagesz=2MB nvme_core.io_timeout=2 nvme.poll_queues=12 max_host_mem_size_mb=512 nvme.io_poll=0 nvme.io_poll_delay=0#' /etc/default/grub && update-grub
+    # echo "$(tput setaf 2)√ Done fixing! Please reboot! 已尝试修复，请重新启动！$(tput sgr 0)"
+    # else echo "$(tput setaf 2)√ Already fixed! Skiped! 已修复过，无需设置！$(tput sgr 0)"
+    # fi
+    echo "still wip"
   }
 
   reinstallDriver(){
