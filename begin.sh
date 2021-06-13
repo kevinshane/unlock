@@ -145,6 +145,40 @@ startUpdate(){
 }
 
 startUnlock(){
+
+  unlockMenu(){
+      if [ $L = "cn" ];then # CN
+      OPTION=$(whiptail --title "选择相应版本的解锁方式" --menu "
+      采用C版本将获得更快的性能，python版本则有更好的兼容性
+      如无其他特殊需求，推荐使用C版本解锁，PY解锁仅用于测试兼容
+      请选择配置，回车执行：" 15 80 5 \
+      "a" "C版本 --------- vGPU解锁" \
+      "b" "Python版本 ---- vGPU解锁" \
+      "q" "返回主菜单" \
+      3>&1 1>&2 2>&3)
+      case "$OPTION" in
+      a ) runCversionUnlock;;
+      b ) runPythonUnlock;;
+      q ) main;;
+      esac
+      tput sgr 0
+    else # EN
+      OPTION=$(whiptail --title "Select option to Unlock" --menu "
+      C version is a bit faster than Python version
+      Choose your prefer option: " 15 80 5 \
+      "a" "C Version --------- vGPU Unlock" \
+      "b" "Python version ---- vGPU Unlock" \
+      "q" "返回主菜单" \
+      3>&1 1>&2 2>&3)
+      case "$OPTION" in
+      a ) runCversionUnlock;;
+      b ) runPythonUnlock;;
+      q ) main;;
+      esac
+      tput sgr 0
+    fi
+  }
+
   runPythonUnlock(){ # Original python frida unlock
     cd /root/
     # driver="440.87"
@@ -417,7 +451,7 @@ EOF
 
     请认真阅读以上条款，同意回车继续，不同意请退出
 
-    " 26 80) then runCversionUnlock
+    " 26 80) then unlockMenu
     else main
     fi
     else
@@ -440,7 +474,7 @@ EOF
 
     Agree to continue, disagree to go back to main menu
 
-    " 26 80) then runCversionUnlock
+    " 26 80) then unlockMenu
     else main
     fi
   fi
@@ -566,6 +600,7 @@ chVram(){
       echo "Released mdev devices 重新释放所有mdev设备"
     }
 
+    clear
     killvgpu
 
     mdevctl start -u $AAA -p 0000:$PCI --type $vxQ
@@ -609,19 +644,19 @@ chVram(){
     Vmemory=$(($memory / 1000))
     float=$(($Vmemory / $Vnum))
 
-  echo "$(tput setaf 2)
-  ===================================================================
-  物理显存: $memory兆
-  当前切分状态:
-  切分型号: $currentType
-  当前vGPU显存为"$Vnum"G，可供使用的vGPU数量为$float个
+    echo "$(tput setaf 2)
+===================================================================
+物理显存: $memory兆
+当前切分状态:
+切分型号: $currentType
+当前vGPU显存为"$Vnum"G，可供使用的vGPU数量为$float个
 
-  TotalVram: $memory Mib
-  Slicing Status:
-  vGPU Type: $currentType
-  Current vGPU vRAM is "$Vnum"G, available vGPU count is $float
-  ===================================================================$(tput sgr 0)"
-  }
+TotalVram: $memory Mib
+Slicing Status:
+vGPU Type: $currentType
+Current vGPU vRAM is "$Vnum"G, available vGPU count is $float
+===================================================================$(tput sgr 0)"
+}
 
   if [ $L = "cn" ];then # CN
     selectVram=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
@@ -630,6 +665,8 @@ chVram(){
     "b" "切分为2G显存" \
     "c" "切分为3G显存" \
     "d" "切分为4G显存" \
+    "e" "切分为6G显存" \
+    "f" "切分为8G显存" \
     "q" "回主界面" \
     3>&1 1>&2 2>&3)
     case "$selectVram" in
@@ -645,6 +682,12 @@ chVram(){
     d ) selectVram=4
       ;;
 
+    e ) selectVram=6
+      ;;
+
+    f ) selectVram=8
+      ;;
+
     q ) main;;
     esac
     startVramSlice
@@ -657,6 +700,8 @@ chVram(){
     "b" "slice to 2G vRam" \
     "c" "slice to 3G vRam" \
     "d" "slice to 4G vRam" \
+    "e" "slice to 6G vRam" \
+    "f" "slice to 8G vRam" \
     "q" "Go back to Main Menu" \
     3>&1 1>&2 2>&3)
     case "$selectVram" in
@@ -670,6 +715,12 @@ chVram(){
       ;;
 
     d ) selectVram=4
+      ;;
+
+    e ) selectVram=6
+      ;;
+
+    f ) selectVram=8
       ;;
 
     q ) main;;
@@ -1697,6 +1748,72 @@ EOF
     esac
   }
 
+  intelGVTmenu(){
+
+    runIntelGVT(){
+      clear
+      if [ $1 = 'enable' ];then
+        # adding extra grub settings
+        if [ `grep "enable_gvt" /etc/default/grub | wc -l` = 0 ];then
+            sed -i 's#iommu=pt#iommu=pt i915.enable_gvt=1#' /etc/default/grub && update-grub
+            echo "$(tput setaf 2)Intel GVT-G added! 已开启GVT-G切分 √$(tput sgr 0)"
+          else echo "$(tput setaf 2)GVT-G already added, skip it! 已开启GVT-G切分，无需重复设置！ √$(tput sgr 0)"
+        fi
+
+        # adding extra vfio modules
+        if [ `grep "kvmgt" /etc/modules|wc -l` = 0 ];then
+          echo -e "kvmgt\n#exngt\nvfio-mdev" >> /etc/modules
+          echo "$(tput setaf 2)GVT-G module satisfied! 已添加GVT-G模组 √$(tput sgr 0)"
+          else echo "$(tput setaf 2)GVT-G module already satisfied! 已添加GVT-G模组，无需重复设置！ √$(tput sgr 0)"
+        fi
+
+        # blacklist nouveau
+        if [ `grep "nouveau" /etc/modprobe.d/blacklist.conf|wc -l` = 0 ];then
+          echo "blacklist nouveau" >> /etc/modprobe.d/blacklist.conf && update-initramfs -u -k all
+          echo "$(tput setaf 2)vfio satisfied 已添加VFIO模组 √$(tput sgr 0)"
+          else echo "$(tput setaf 2)nouveau already satisfied! 已屏蔽nouveau驱动，无需重复设置！ √$(tput sgr 0)"
+        fi
+
+        # echo
+        echo "$(tput setaf 2)Done! Go to PVE webGui->VMid->Hardward->add PCI device->choose your desire GVT-G type$(tput setaf 0)"
+        echo "$(tput setaf 2)设置完毕！请到网页端->虚拟机id->硬件->PCI设备->添加你希望的类型$(tput setaf 0)"
+        tput setaf 0
+      fi
+
+      if [ $1 = 'disable' ];then
+        # delete extra grub settings
+        sed -i 's#iommu=pt i915.enable_gvt=1#iommu=pt#' /etc/default/grub
+        update-grub
+
+        # delete extra vfio modules
+        sed -i '/kvmgt/d' /etc/modules
+        sed -i '/#exngt/d' /etc/modules
+        sed -i '/vfio-mdev/d' /etc/modules
+
+        # update initramfs
+        update-initramfs -u -k all
+
+        # echo
+        echo "$(tput setaf 2)GVT-G disabled! ! Please reboot!"
+        echo "$(tput setaf 2)已关闭GVT-G！请重启宿主机！$(tput setaf 0)"
+        tput setaf 0
+      fi
+    }
+
+    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
+    Free GVT-G vGPU Slicing! Support from UHD610 to UHD750! Intel ONLY!
+    免费vGPU切分，仅适用于Intel核显vGPU切分，支持UHD610-750等型号" 16 80 5 \
+    "a" "Enable Intel GVT-G ------ 开启Intel核显切分" \
+    "b" "Disable iGPU GVT-G ------ 关闭Intel核显切分" \
+    "q" "Go back to X Menu ------- 返回工具菜单" \
+    3>&1 1>&2 2>&3)
+    case "$OPTION" in
+    a ) runIntelGVT enable;;
+    b ) runIntelGVT disable;;
+    q ) ulimenu;;
+    esac
+  }
+
   if [ $L = "cn" ];then # CN
     OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "各类实用工具集合" 16 60 8 \
     "a" "美化LS,CAT命令" \
@@ -1705,6 +1822,7 @@ EOF
     "d" "完全拆分IOMMU组(慎用)" \
     "e" "vGPU帧率解锁" \
     "f" "安装其他版本的宿主机驱动" \
+    "g" "Intel GVT-G 适用于Intel核显vGPU" \
     "q" "返回主菜单" \
     3>&1 1>&2 2>&3)
     else # EN
@@ -1715,6 +1833,7 @@ EOF
     "d" "Complete break down IOMMU group" \
     "e" "vGPU FPS unlock" \
     "f" "Install different host driver" \
+    "g" "Intel GVT-G for Intel CPU only" \
     "q" "Go back to Main Menu" \
     3>&1 1>&2 2>&3)
   fi
@@ -1726,6 +1845,7 @@ EOF
     d ) extraGrubsettings;;
     e ) unlockFPSmenu;;
     f ) reinstallDriver;;
+    g ) intelGVTmenu;;
     q ) main;;
   esac
   tput sgr 0
