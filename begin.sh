@@ -1613,14 +1613,91 @@ EOF
 
   }
 
-  extraGrubsettings(){
+  iommuGroupcheck(){ # credits to https://github.com/pavolelsig/IOMMU-viewer
+    if [ $L = "cn" ];then # CN
+      if (whiptail --title "IOMMU组 查看" --yes-button "继续" --no-button "返回"  --yesno "
+      此脚本将自动检测主板IOMMU组设计，方便查看各种直通硬件对应的组编号
+      脚本也会罗列出各硬件的ID编号及当前使用的内核驱动" 10 80) then
+        GROUP=`find /sys/kernel/iommu_groups/ -type l | cut -d '/' -f 5,7 --output-delimiter='-'`
+        for i in $GROUP; do
+        k=`echo $i | cut -d '-' -f 1`
+        l=`echo $i | cut -d '-' -f 2`
+        j=`echo $i | cut -d ':' -f 2,3,4`
+        m=`lspci -k -s $j | grep "Kernel driver in use"`		
+        echo -n  "IOMMU组："
+        if [ $k -lt 10 ]
+        then
+          echo -n " $k  "
+        else
+          echo -n " $k "
+        fi
+        echo -n " $l "
+        echo -n "`lspci -nn | grep $j | cut -d ' ' -f 2-`"		
+        if ! [ -z "$m" ]
+        then
+          echo -n "   内核驱动："
+        fi	
+        echo "$m" | cut -d ':' -f 2
+        done | sort -nk2
+      else
+        ulimenu
+      fi
+    else # EN
+      if (whiptail --title "IOMMU Check" --yes-button "Continue" --no-button "Go Back"  --yesno "
+      Script lists all IOMMU group based for motherboard design
+      Easy to see what's the Hardware ID, what kernel driver being used" 10 80) then
+        GROUP=`find /sys/kernel/iommu_groups/ -type l | cut -d '/' -f 5,7 --output-delimiter='-'`
+        for i in $GROUP; do
+        k=`echo $i | cut -d '-' -f 1`
+        l=`echo $i | cut -d '-' -f 2`
+        j=`echo $i | cut -d ':' -f 2,3,4`
+        m=`lspci -k -s $j | grep "Kernel driver in use"`		
+        echo -n  "IommuGroup: "
+        if [ $k -lt 10 ]
+        then
+          echo -n " $k  "
+        else
+          echo -n " $k "
+        fi
+        echo -n " $l "
+        echo -n "`lspci -nn | grep $j | cut -d ' ' -f 2-`"		
+        if ! [ -z "$m" ]
+        then
+          echo -n "   Driver: "
+        fi	
+        echo "$m" | cut -d ':' -f 2
+        done | sort -nk2
+      else
+        ulimenu
+      fi
+    fi
+  }
+
+  extraGrubsettings(){ # breaking all iommu by applying pcie_acs_override
     # hugepagesz=2MB nvme_core.io_timeout=2 nvme.poll_queues=12 max_host_mem_size_mb=512 nvme.io_poll=0 nvme.io_poll_delay=0 
     # pcie_acs_override=downstream,multifunction vfio_iommu_type1.allow_unsafe_interrupts=1
-
-    if [ `grep "pcie_acs_override" /etc/default/grub | wc -l` = 0 ];then
-    sed -i 's#iommu=pt#iommu=pt pcie_acs_override=downstream,multifunction vfio_iommu_type1.allow_unsafe_interrupts=1#' /etc/default/grub && update-grub
-    echo "$(tput setaf 2)√ Done Extra IOMMU! Please reboot! 已开启额外IOMMU参数，请重新启动！$(tput sgr 0)"
-    else echo "$(tput setaf 2)√ Extra IOMMU already satisfied! 已有额外IOMMU参数，无需设置！ √$(tput sgr 0)"
+    if [ $L = "cn" ];then # CN
+      if (whiptail --title "彻底分离IOMMU组" --yes-button "继续" --no-button "返回"  --yesno "
+      请谨慎执行该脚本，如果你并未碰到直通困难的硬件，则请勿运行该脚本
+      当你碰到某硬件无法直通时可尝试执行该脚本，以分离出更合理的IOMMU组" 10 85) then
+        if [ `grep "pcie_acs_override" /etc/default/grub | wc -l` = 0 ];then
+        sed -i 's#iommu=pt#iommu=pt pcie_acs_override=downstream,multifunction vfio_iommu_type1.allow_unsafe_interrupts=1#' /etc/default/grub && update-grub
+        echo "$(tput setaf 2)√ 已开启额外IOMMU参数，请重新启动！$(tput sgr 0)"
+        else echo "$(tput setaf 2)√ 已有额外IOMMU参数，无需设置！ √$(tput sgr 0)"
+        fi
+      else ulimenu
+      fi
+    else # EN
+      if (whiptail --title "Breaking IOMMU" --yes-button "Continue" --no-button "Go Back"  --yesno "
+      Apply this script when you need pcie_acs_override
+      If you don't have trouble in hardware passthro, please don't run this script" 10 85) then
+        if [ `grep "pcie_acs_override" /etc/default/grub | wc -l` = 0 ];then
+        sed -i 's#iommu=pt#iommu=pt pcie_acs_override=downstream,multifunction vfio_iommu_type1.allow_unsafe_interrupts=1#' /etc/default/grub && update-grub
+        echo "$(tput setaf 2)√ Done pcie_acs_override, please reboot! $(tput sgr 0)"
+        else echo "$(tput setaf 2)√ Already have pcie_acs_override enabled, skip it! √$(tput sgr 0)"
+        fi
+      else ulimenu
+      fi
     fi
   }
 
@@ -1649,15 +1726,6 @@ EOF
     rm /etc/modprobe.d/nvidia.conf
     update-initramfs -u
     echo "$(tput setaf 2)√ Done undo FPS! Please reboot! 已恢复FPS限制，请重启！ √$(tput sgr 0)"
-  }
-
-  fixTimeOut(){
-    # if [ `grep "hugepagesz" /etc/default/grub | wc -l` = 0 ];then
-    # sed -i 's#iommu=pt#iommu=pt hugepagesz=2MB nvme_core.io_timeout=2 nvme.poll_queues=12 max_host_mem_size_mb=512 nvme.io_poll=0 nvme.io_poll_delay=0#' /etc/default/grub && update-grub
-    # echo "$(tput setaf 2)√ Done fixing! Please reboot! 已尝试修复，请重新启动！$(tput sgr 0)"
-    # else echo "$(tput setaf 2)√ Already fixed! Skiped! 已修复过，无需设置！$(tput sgr 0)"
-    # fi
-    echo "still wip"
   }
 
   reinstallDriver(){
@@ -1801,8 +1869,8 @@ EOF
     }
 
     OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "
-    Free GVT-G vGPU Slicing! Support from UHD610 to UHD750! Intel ONLY!
-    免费vGPU切分，仅适用于Intel核显vGPU切分，支持UHD610-750等型号" 16 80 5 \
+    Free GVT-G vGPU Slicing! Support from UHD510 to UHD630! Intel ONLY!
+    免费vGPU切分，仅适用于Intel核显vGPU切分，支持UHD510-630等型号" 16 80 5 \
     "a" "Enable Intel GVT-G ------ 开启Intel核显切分" \
     "b" "Disable iGPU GVT-G ------ 关闭Intel核显切分" \
     "q" "Go back to X Menu ------- 返回工具菜单" \
@@ -1815,25 +1883,27 @@ EOF
   }
 
   if [ $L = "cn" ];then # CN
-    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "各类实用工具集合" 16 60 8 \
+    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "各类实用工具集合" 18 60 10 \
     "a" "美化LS,CAT命令" \
     "b" "安装bpytop" \
     "c" "添加/删除 硬盘直通" \
-    "d" "完全拆分IOMMU组(慎用)" \
-    "e" "vGPU帧率解锁" \
-    "f" "安装其他版本的宿主机驱动" \
-    "g" "Intel GVT-G 适用于Intel核显vGPU" \
+    "d" "检查IOMMU分组" \
+    "e" "完全拆分IOMMU组(慎用)" \
+    "f" "vGPU帧率解锁" \
+    "g" "安装其他版本的NV宿主机驱动" \
+    "h" "Intel GVT-G 适用于Intel核显vGPU直通" \
     "q" "返回主菜单" \
     3>&1 1>&2 2>&3)
     else # EN
-    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "Useful tools for PVE" 16 60 8 \
+    OPTION=$(whiptail --title " vGPU Unlock Tools - Version : 0.0.3 " --menu "Useful tools for PVE" 18 60 10 \
     "a" "Beautify LS, CAT command" \
     "b" "Install bpytop" \
     "c" "Passthrough/Remove disk to VM" \
-    "d" "Complete break down IOMMU group" \
-    "e" "vGPU FPS unlock" \
-    "f" "Install different host driver" \
-    "g" "Intel GVT-G for Intel CPU only" \
+    "d" "Check IOMMU group" \
+    "e" "Complete break down IOMMU group" \
+    "f" "vGPU FPS unlock" \
+    "g" "Install different NV host driver" \
+    "h" "Intel GVT-G for Intel CPU only" \
     "q" "Go back to Main Menu" \
     3>&1 1>&2 2>&3)
   fi
@@ -1842,10 +1912,11 @@ EOF
     a ) beautifyLSCAT;;
     b ) installBPYTOP;;
     c ) diskMenu;;
-    d ) extraGrubsettings;;
-    e ) unlockFPSmenu;;
-    f ) reinstallDriver;;
-    g ) intelGVTmenu;;
+    d ) iommuGroupcheck;;
+    e ) extraGrubsettings;;
+    f ) unlockFPSmenu;;
+    g ) reinstallDriver;;
+    h ) intelGVTmenu;;
     q ) main;;
   esac
   tput sgr 0
