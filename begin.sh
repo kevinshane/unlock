@@ -168,7 +168,7 @@ startUnlock(){
       Choose your prefer option: " 15 80 5 \
       "a" "C Version --------- vGPU Unlock" \
       "b" "Python version ---- vGPU Unlock" \
-      "q" "返回主菜单" \
+      "q" "Go Back to Main Menu" \
       3>&1 1>&2 2>&3)
       case "$OPTION" in
       a ) runCversionUnlock;;
