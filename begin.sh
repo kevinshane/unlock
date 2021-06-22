@@ -90,7 +90,7 @@ startUpdate(){
 
     # adding unlock command
     if [ `grep "alias unlock" ~/.bashrc|wc -l` = 0 ];then
-      echo "alias unlock='/root/begin.sh'" >> ~/.bashrc
+      echo "alias unlock='/root/begin.sh.x'" >> ~/.bashrc
       echo "$(tput setaf 2)√ Done unlock command! 已设置unlock命令$(tput sgr 0)"
     else echo "$(tput setaf 2)√ Done unlock command! 已设置unlock命令$(tput sgr 0)"
     fi
